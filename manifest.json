@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "HF Model Assistant",
+  "description": "Hugging Face model page assistant with ModelScope mapping, deployment commands, VRAM estimation",
+  "version": "1.0.0",
+  "permissions": ["activeTab", "storage", "clipboardWrite"],
+  "host_permissions": ["https://huggingface.co/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://huggingface.co/*/*"],
+      "exclude_matches": [
+        "https://huggingface.co/spaces/*",
+        "https://huggingface.co/datasets/*",
+        "https://huggingface.co/docs/*",
+        "https://huggingface.co/blog/*",
+        "https://huggingface.co/search*"
+      ],
+      "js": [
+        "src/shared/i18n.js",
+        "src/shared/storage.js",
+        "src/shared/api.js",
+        "src/shared/vram-estimator.js",
+        "src/shared/commands.js",
+        "src/content/page-scraper.js",
+        "src/content/tabs/overview.js",
+        "src/content/tabs/deploy.js",
+        "src/content/tabs/download.js",
+        "src/content/tabs/tools.js",
+        "src/content/sidebar.js",
+        "src/content/content.js"
+      ],
+      "css": ["src/content/sidebar.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "src/background/background.js"
+  },
+  "options_page": "src/options/options.html",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
