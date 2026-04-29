@@ -1,0 +1,29 @@
+<div id="hf-assistant-sidebar" class="hf-assistant-sidebar">
+  <div class="hf-assistant-header">
+    <span class="hf-assistant-title">🤖 <span data-i18n="sidebarTitle">模型助手</span></span>
+    <div class="hf-assistant-actions">
+      <button class="hf-assistant-btn" id="hf-assistant-favorite" title="收藏">☆</button>
+      <button class="hf-assistant-btn" id="hf-assistant-toggle" title="折叠">✕</button>
+    </div>
+  </div>
+
+  <div class="hf-assistant-tabs">
+    <button class="hf-assistant-tab active" data-tab="overview" data-i18n="tabOverview">概览</button>
+    <button class="hf-assistant-tab" data-tab="deploy" data-i18n="tabDeploy">部署</button>
+    <button class="hf-assistant-tab" data-tab="download" data-i18n="tabDownload">下载</button>
+    <button class="hf-assistant-tab" data-tab="tools" data-i18n="tabTools">工具</button>
+  </div>
+
+  <div class="hf-assistant-content">
+    <div class="hf-assistant-panel active" id="panel-overview"></div>
+    <div class="hf-assistant-panel" id="panel-deploy"></div>
+    <div class="hf-assistant-panel" id="panel-download"></div>
+    <div class="hf-assistant-panel" id="panel-tools"></div>
+  </div>
+
+  <div class="hf-assistant-toast" id="hf-assistant-toast"></div>
+</div>
+
+<div id="hf-assistant-collapsed" class="hf-assistant-collapsed" style="display: none;">
+  <button class="hf-assistant-expand-btn" title="展开">🤖</button>
+</div>
