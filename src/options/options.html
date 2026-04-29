@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>HF 模型助手 - 设置</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="options-container">
+    <h1>⚙️ HF 模型助手设置</h1>
+
+    <div class="options-tabs">
+      <button class="options-tab active" data-tab="general">通用设置</button>
+      <button class="options-tab" data-tab="deploy">部署工具</button>
+      <button class="options-tab" data-tab="api">API 配置</button>
+    </div>
+
+    <div class="options-panel active" id="panel-general">
+      <div class="form-group">
+        <label>默认部署工具</label>
+        <select id="default-tool">
+          <option value="ollama">Ollama</option>
+          <option value="vllm">vLLM</option>
+          <option value="sglang">SGLang</option>
+          <option value="llamacpp">llama.cpp</option>
+          <option value="transformers">Transformers</option>
+          <option value="tgi">TGI</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>首选镜像站</label>
+        <select id="preferred-mirror">
+          <option value="hf-mirror">hf-mirror.com</option>
+          <option value="modelscope">ModelScope</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>机器显存大小 (GB)</label>
+        <input type="number" id="vram-gb" min="1" max="128" value="8">
+      </div>
+
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="sidebar-open">
+          访问 HF 页面时自动展开侧边栏
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label>界面语言</label>
+        <select id="language">
+          <option value="zh">中文</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="options-panel" id="panel-deploy">
+      <p style="color: #6b7280;">各部署工具的默认参数将在后续版本中添加。</p>
+    </div>
+
+    <div class="options-panel" id="panel-api">
+      <div class="form-group">
+        <label>翻译服务</label>
+        <select id="translation-provider">
+          <option value="none">不使用</option>
+          <option value="deepl">DeepL</option>
+          <option value="openai">OpenAI</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>API Key</label>
+        <input type="password" id="translation-api-key" placeholder="输入 API Key">
+      </div>
+    </div>
+
+    <div class="options-actions">
+      <button class="btn-primary" id="save-btn">保存设置</button>
+      <span id="save-status"></span>
+    </div>
+  </div>
+
+  <script src="../shared/storage.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
