@@ -1,3 +1,72 @@
+const GPU_PRESETS = [
+  { group: '消费级 — NVIDIA',  list: [
+    { name: 'RTX 5090',            vram: 32  },
+    { name: 'RTX 5080',            vram: 16  },
+    { name: 'RTX 4090',            vram: 24  },
+    { name: 'RTX 4080 Super',      vram: 16  },
+    { name: 'RTX 4080',            vram: 16  },
+    { name: 'RTX 4070 Ti Super',   vram: 16  },
+    { name: 'RTX 4070 Ti',         vram: 12  },
+    { name: 'RTX 4070 Super',      vram: 12  },
+    { name: 'RTX 4070',            vram: 12  },
+    { name: 'RTX 3090 Ti / 3090',  vram: 24  },
+    { name: 'RTX 3080 Ti',         vram: 12  },
+    { name: 'RTX 3080',            vram: 10  },
+  ]},
+  { group: '消费级 — AMD / Apple', list: [
+    { name: 'RX 7900 XTX',         vram: 24  },
+    { name: 'RX 7900 XT',          vram: 20  },
+    { name: 'Apple M4 Ultra',      vram: 192 },
+    { name: 'Apple M4 Max (128G)', vram: 128 },
+    { name: 'Apple M4 Max (64G)',  vram: 64  },
+    { name: 'Apple M4 Pro (48G)',  vram: 48  },
+    { name: 'Apple M3 Ultra',      vram: 192 },
+    { name: 'Apple M3 Max (128G)', vram: 128 },
+    { name: 'Apple M2 Ultra',      vram: 192 },
+    { name: 'Apple M2 Max (96G)',   vram: 96 },
+  ]},
+  { group: '专业级 — NVIDIA',  list: [
+    { name: 'RTX 6000 Ada',        vram: 48  },
+    { name: 'RTX 5000 Ada',        vram: 32  },
+    { name: 'RTX 4500 Ada',        vram: 24  },
+    { name: 'RTX 4000 Ada',        vram: 20  },
+    { name: 'RTX A6000',           vram: 48  },
+    { name: 'RTX A5000',           vram: 24  },
+    { name: 'RTX A4000',           vram: 16  },
+  ]},
+  { group: '数据中心 — NVIDIA', list: [
+    { name: 'H200 SXM (141GB)',    vram: 141 },
+    { name: 'H200 NVL (94GB)',     vram: 94  },
+    { name: 'H100 SXM (80GB)',     vram: 80  },
+    { name: 'H100 PCIe (80GB)',    vram: 80  },
+    { name: 'H20 (96GB)',          vram: 96  },
+    { name: 'A100 SXM (80GB)',     vram: 80  },
+    { name: 'A100 PCIe (80GB)',    vram: 80  },
+    { name: 'A100 PCIe (40GB)',    vram: 40  },
+    { name: 'A800 (80GB)',         vram: 80  },
+    { name: 'L40S (48GB)',         vram: 48  },
+    { name: 'L40 (48GB)',          vram: 48  },
+    { name: 'L4 (24GB)',           vram: 24  },
+    { name: 'A40 (48GB)',          vram: 48  },
+    { name: 'A30 (24GB)',          vram: 24  },
+    { name: 'A10 (24GB)',          vram: 24  },
+    { name: 'V100 SXM2 (32GB)',    vram: 32  },
+    { name: 'V100 PCIe (16GB)',    vram: 16  },
+    { name: 'T4 (16GB)',           vram: 16  },
+  ]},
+  { group: '国产 AI 芯片', list: [
+    { name: '华为 昇腾 910C (96GB)',   vram: 96 },
+    { name: '华为 昇腾 910B3 (64GB)',  vram: 64 },
+    { name: '华为 昇腾 910B (64GB)',   vram: 64 },
+    { name: '华为 昇腾 310P (16GB)',   vram: 16 },
+    { name: '寒武纪 MLU590 (64GB)',    vram: 64 },
+    { name: '天数智芯 BI-150 (80GB)',  vram: 80 },
+    { name: '摩尔线程 MTT S4000 (48GB)', vram: 48 },
+    { name: '燧原 T20 (32GB)',         vram: 32 },
+    { name: '沐曦 MXC500 (32GB)',      vram: 32 },
+  ]},
+];
+
 const DeployTab = {
   rendered: false,
   currentTool: 'ollama',
@@ -27,16 +96,28 @@ const DeployTab = {
           <div class="hf-assistant-card-title" style="margin:0;">${t('vramEstimate')}</div>
           <button type="button" class="hf-assistant-inline-action" id="vram-config-toggle">⚙️配置</button>
         </div>
-        <div id="vram-config-form" style="display:none;margin-bottom:10px;">
-          <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <div id="vram-config-form" style="display:none;border-top:1px solid #e5e7eb;padding-top:10px;margin-bottom:10px;">
+          <div style="margin-bottom:8px;">
+            <label class="hf-assistant-label" style="margin-bottom:4px;">硬件预设</label>
+            <select id="vram-gpu-select" class="hf-assistant-select" style="margin-bottom:0;">
+              ${GPU_PRESETS.map(g =>
+                `<optgroup label="${g.group}">${g.list.map(gpu =>
+                  `<option value="${gpu.vram}" data-name="${gpu.name}">${gpu.name} · ${gpu.vram}GB</option>`
+                ).join('')}</optgroup>`
+              ).join('')}
+              <optgroup label="其他"><option value="custom">自定义...</option></optgroup>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-end;">
             <div style="flex:1;">
-              <label class="hf-assistant-label" style="margin-bottom:2px;font-size:11px;">显存 (GB)</label>
-              <input type="number" id="vram-config-gb" class="hf-assistant-input" style="margin-bottom:0;" min="1" max="9999">
+              <label class="hf-assistant-label" style="margin-bottom:2px;">每卡显存 (GB)</label>
+              <input type="number" id="vram-config-gb" class="hf-assistant-input" style="margin-bottom:0;" min="1" max="9999" readonly>
             </div>
-            <div style="flex:1;">
-              <label class="hf-assistant-label" style="margin-bottom:2px;font-size:11px;">GPU 数量</label>
-              <input type="number" id="vram-config-gpu" class="hf-assistant-input" style="margin-bottom:0;" min="1" max="16">
+            <div style="width:70px;">
+              <label class="hf-assistant-label" style="margin-bottom:2px;">数量</label>
+              <input type="number" id="vram-config-gpu" class="hf-assistant-input" style="margin-bottom:0;" min="1" max="512" value="1">
             </div>
+            <div style="padding-bottom:8px;font-size:11px;color:#6b7280;white-space:nowrap;" id="vram-total-label"></div>
           </div>
         </div>
         <div id="vram-display"><div style="color:#9ca3af;font-size:11px;">加载模型信息中…</div></div>
@@ -88,17 +169,63 @@ const DeployTab = {
       vramToggle.textContent = expanded ? '✕' : '⚙️配置';
     });
 
-    container.querySelector('#vram-config-gb').value = settings.vramGB;
-    container.querySelector('#vram-config-gb').addEventListener('change', e => {
-      const val = Math.max(1, parseInt(e.target.value) || 64);
-      Storage.set('vramGB', val).then(() => this.updateVramEstimate(container));
+    const gpuSelect  = container.querySelector('#vram-gpu-select');
+    const vramInput  = container.querySelector('#vram-config-gb');
+    const countInput = container.querySelector('#vram-config-gpu');
+    const totalLabel = container.querySelector('#vram-total-label');
+
+    const updateTotal = () => {
+      const perCard = parseInt(vramInput.value) || 0;
+      const count   = parseInt(countInput.value) || 1;
+      const total   = perCard * count;
+      totalLabel.textContent = count > 1 ? `= ${total} GB` : '';
+      Storage.set('vramGB', total || perCard)
+        .then(() => Storage.set('gpuCount', count))
+        .then(() => this.updateVramEstimate(container));
+    };
+
+    // Restore saved GPU selection
+    const savedGPU   = settings.selectedGPU || '';
+    const savedVram  = settings.vramGB || 24;
+    const savedCount = settings.gpuCount || 1;
+    countInput.value = savedCount;
+
+    // Find matching option by name or fall back to custom
+    let matched = false;
+    for (const opt of gpuSelect.options) {
+      if (opt.dataset.name === savedGPU) {
+        gpuSelect.value = opt.value;
+        vramInput.value = opt.value;
+        vramInput.readOnly = true;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      gpuSelect.value = 'custom';
+      vramInput.value = savedVram;
+      vramInput.readOnly = false;
+    }
+    updateTotal();
+
+    gpuSelect.addEventListener('change', () => {
+      const val = gpuSelect.value;
+      if (val === 'custom') {
+        vramInput.readOnly = false;
+        vramInput.value = '';
+        vramInput.focus();
+        Storage.set('selectedGPU', '');
+      } else {
+        vramInput.readOnly = true;
+        vramInput.value = val;
+        const name = gpuSelect.options[gpuSelect.selectedIndex]?.dataset.name || '';
+        Storage.set('selectedGPU', name);
+      }
+      updateTotal();
     });
 
-    container.querySelector('#vram-config-gpu').value = settings.gpuCount;
-    container.querySelector('#vram-config-gpu').addEventListener('change', e => {
-      const val = Math.max(1, parseInt(e.target.value) || 1);
-      Storage.set('gpuCount', val).then(() => this.updateVramEstimate(container));
-    });
+    vramInput.addEventListener('change', updateTotal);
+    countInput.addEventListener('change', updateTotal);
 
     // Command card inline config toggle + tool switcher
     const cmdToggle = container.querySelector('#cmd-config-toggle');
