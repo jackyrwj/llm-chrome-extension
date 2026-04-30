@@ -414,18 +414,13 @@ const DeployTab = {
                        estimate.status === 'warning' ? t('vramWarning') : t('vramInsufficient');
     const sourceTag = estimate.configLoaded
       ? '<span style="color:#16a34a;">● 实际配置</span>'
-      : '<span style="color:#ca8a04;">● 估算</span>';
-    const archInfo = estimate.numLayers
-      ? `${estimate.numLayers}层 · hidden ${estimate.hiddenSize} · KV头 ${estimate.numKVHeads}`
-      : '架构参数不可用';
+      : '<span style="color:#ca8a04;">● 估算值</span>';
 
     vramDisplay.innerHTML = `
       <div style="font-size:18px;font-weight:600;margin-bottom:4px;">${estimate.vramGB} GB</div>
       <div class="${statusClass}">${statusText}</div>
-      <div style="color:#6b7280;font-size:10px;margin-top:6px;line-height:1.6;">
-        <div>${estimate.paramsB}B 参数 · ${estimate.precision} · ${sourceTag}</div>
-        <div>${archInfo}</div>
-        <div style="margin-top:4px;color:#d1d5db;">基于 ${userVramGB}GB 显存 · 可在顶部 ⚙️ 中调整</div>
+      <div style="color:#6b7280;font-size:10px;margin-top:6px;">
+        ${estimate.paramsB}B 参数 · ${estimate.precision} · ${sourceTag}
       </div>
     `;
   },
