@@ -20,6 +20,7 @@
         "src/content/tabs/download.js",
         "src/content/tabs/favorites.js",
         "src/content/tabs/recommend.js",
+        "src/content/tabs/request.js",
         "src/content/sidebar.js",
         "src/content/content.js"
       ],
