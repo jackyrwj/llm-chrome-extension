@@ -512,44 +512,6 @@
   color: #374151;
 }
 
-/* ===== Download Tab: Command Block (copy button fix) ===== */
-.hf-download-command-block {
-  background: #1f2937;
-  border-radius: 8px;
-  padding: 12px 12px 44px 12px;
-  position: relative;
-  word-break: break-all;
-  white-space: pre-wrap;
-  font-family: "SF Mono", Monaco, "Cascadia Code", monospace;
-  font-size: 11px;
-  line-height: 1.6;
-  color: #e5e7eb;
-  margin-bottom: 8px;
-}
-
-.hf-download-command-actions {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  display: flex;
-  gap: 6px;
-}
-
-.hf-download-command-actions button {
-  background: #374151;
-  color: #ffffff;
-  border: none;
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 10px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.hf-download-command-actions button:hover {
-  background: #4b5563;
-}
-
 /* ===== Download Tab: Tips ===== */
 .hf-download-tip {
   font-size: 11px;

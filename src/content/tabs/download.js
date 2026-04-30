@@ -89,9 +89,9 @@ const DownloadTab = {
     if (tool === 'hf_cli') {
       let cmd = '';
       const env = this.buildEnvVar(mirrorUrl, platform);
-      if (env) cmd += env + '\n';
-      cmd += `huggingface-cli download ${modelId}`;
-      if (localDir) cmd += ` --local-dir ${localDir}`;
+      if (env) cmd += '$ ' + env + '\n';
+      cmd += `$ huggingface-cli download ${modelId}`;
+      if (localDir) cmd += ` \\\n  --local-dir ${localDir}`;
 
       // File filtering
       const includes = [];
@@ -103,24 +103,24 @@ const DownloadTab = {
 
       const allOn = Object.values(fileFilters).every(v => v);
       if (!allOn && includes.length > 0) {
-        cmd += ` --include "${includes.join('" "')}"`;
+        cmd += ` \\\n  --include "${includes.join('" "')}"`;
       }
 
-      if (hfToken) cmd += ` --token ${hfToken}`;
+      if (hfToken) cmd += ` \\\n  --token ${hfToken}`;
       return cmd.trim();
     }
 
     if (tool === 'git_lfs') {
       let cmd = '';
       if (platform === 'windows') {
-        cmd += `$env:GIT_LFS_SKIP_SMUDGE="1"\n`;
+        cmd += '$ $env:GIT_LFS_SKIP_SMUDGE="1"\n';
       } else {
-        cmd += `GIT_LFS_SKIP_SMUDGE=1 `;
+        cmd += '$ GIT_LFS_SKIP_SMUDGE=1\n';
       }
       const baseUrl = mirror === 'modelscope' && modelInfo.modelscopeUrl
         ? modelInfo.modelscopeUrl
         : `${mirrorUrl}/${modelId}`;
-      cmd += `git clone ${baseUrl}.git`;
+      cmd += `$ git clone ${baseUrl}.git`;
       return cmd.trim();
     }
 
@@ -181,7 +181,6 @@ const DownloadTab = {
 
   buildHTML() {
     const { modelInfo, selectedTool, selectedMirror, advancedOpen, fileFilters, localDir, hfToken } = this.state;
-    const platform = this.getPlatform();
 
     let html = '';
 
@@ -195,21 +194,23 @@ const DownloadTab = {
     // ② Recommended Solution Card
     const recommended = this.recommendTool();
     const recCmd = this.buildCommand(recommended.tool, recommended.mirror || selectedMirror, { isRecommended: true });
-    html += `<div class="hf-download-recommend">
-        <div class="hf-download-recommend-title">⭐ ${t('recommendedSolution')}</div>
-        <div class="hf-assistant-command" style="position:relative;padding-bottom:36px;margin:0;">
+    html += `<div class="hf-assistant-card" style="border-color:#2563eb;">
+        <div class="hf-assistant-card-title" style="color:#2563eb;">⭐ ${t('recommendedSolution')}</div>
+        <div class="hf-assistant-command" style="position:relative;padding-bottom:36px;margin-bottom:8px;">
           <span style="white-space:pre-wrap;word-break:break-all;">${this.escapeHtml(recCmd)}</span>
           <div style="position:absolute;bottom:6px;right:6px;display:flex;gap:4px;">
             <button class="hf-assistant-command-copy" data-action="copy-recommended">${t('copy')}</button>
           </div>
         </div>
-        <div class="hf-download-recommend-meta">
+        <div style="font-size:11px;color:#3b82f6;line-height:1.6;">
           <div>💡 ${t('recommendedFor')}: ${recommended.reason}</div>
           <div>⚠️ ${t('prerequisite')}: ${t('tipNeedHuggingfaceHub')}</div>
         </div>
       </div>`;
 
-    // ③ Download Tool Selection
+    // ③ Tool + Mirror card
+    html += `<div class="hf-assistant-card">`;
+    html += `<div class="hf-assistant-card-title" style="margin-bottom:10px;">${t('downloadTool')}</div>`;
     html += `<div class="hf-download-segmented">`;
     Object.values(this.tools).forEach(tool => {
       const active = selectedTool === tool.id ? 'active' : '';
@@ -217,37 +218,40 @@ const DownloadTab = {
     });
     html += `</div>`;
 
-    // ④ Network Settings
-    html += `<div class="hf-download-mirror-row">
+    // Network Settings
+    html += `<div class="hf-download-mirror-row" style="margin-bottom:0;">
         <span class="hf-assistant-label">${t('networkSettings')}</span>
-        <select class="hf-assistant-select" id="dl-mirror-select">
+        <select class="hf-assistant-select" id="dl-mirror-select" style="margin-bottom:0;">
           <option value="hf-mirror" ${selectedMirror === 'hf-mirror' ? 'selected' : ''}>${t('mirrorHfMirror')}</option>
           <option value="official" ${selectedMirror === 'official' ? 'selected' : ''}>${t('official')}</option>
           <option value="modelscope" ${selectedMirror === 'modelscope' ? 'selected' : ''}>${t('modelscope')}</option>
         </select>
       </div>`;
 
-    // ModelScope warning
+    // ModelScope warning (inside card)
     if (selectedMirror === 'modelscope' && modelInfo && !modelInfo.modelscopeUrl) {
-      html += `<div class="hf-download-tip warning">⚠️ ${t('modelscopeNotAvailable')}。${t('modelscopeFallback')}。</div>`;
+      html += `<div class="hf-download-tip warning" style="margin-top:10px;margin-bottom:0;">⚠️ ${t('modelscopeNotAvailable')}。${t('modelscopeFallback')}。</div>`;
     }
 
-    // ⑤ Advanced Options
-    html += `<button class="hf-download-advanced-toggle" id="dl-advanced-toggle">
-        <span>${advancedOpen ? '▲' : '▼'}</span> ${t('advancedOptions')}
+    html += `</div>`; // end tool + mirror card
+
+    // ④ Advanced Options card
+    html += `<div class="hf-assistant-card">`;
+    html += `<button class="hf-download-advanced-toggle" id="dl-advanced-toggle" style="padding:0;">
+        <span style="font-size:10px;">${advancedOpen ? '▲' : '▼'}</span> ${t('advancedOptions')}
       </button>
       <div class="hf-download-advanced-content ${advancedOpen ? 'open' : ''}" id="dl-advanced-content">`;
 
     // File Filtering
     const filtersDisabled = selectedTool === 'git_lfs';
-    html += `<div class="hf-assistant-param-group">${t('fileFiltering')}</div>`;
+    html += `<div class="hf-assistant-param-group" style="margin-top:8px;">${t('fileFiltering')}</div>`;
     if (filtersDisabled) {
       html += `<div class="hf-download-filter-note">${t('gitLfsNoFilter')}</div>`;
     }
     html += `<div class="hf-download-file-filters">`;
     const filterItems = [
       { key: 'safetensors', label: '.safetensors' },
-      { key: 'pytorch', label: '.bin (pytorch)' },
+      { key: 'pytorch', label: '.bin' },
       { key: 'config', label: 'config.json' },
       { key: 'tokenizer', label: 'tokenizer' },
       { key: 'gguf', label: '.gguf' },
@@ -255,8 +259,7 @@ const DownloadTab = {
     ];
     filterItems.forEach(item => {
       const checked = fileFilters[item.key] ? 'checked' : '';
-      const disabled = filtersDisabled ? 'disabled' : '';
-      html += `<label class="hf-download-file-filter ${disabled}">
+      html += `<label class="hf-download-file-filter ${filtersDisabled ? 'disabled' : ''}">
           <input type="checkbox" data-filter="${item.key}" ${checked} ${filtersDisabled ? 'disabled' : ''}>
           <span>${item.label}</span>
         </label>`;
@@ -264,34 +267,37 @@ const DownloadTab = {
     html += `</div>`;
 
     // Local Directory
-    html += `<div class="hf-assistant-label">${t('localDirectory')}</div>
-        <input type="text" class="hf-assistant-input" id="dl-local-dir" value="${this.escapeHtml(localDir)}">`;
+    html += `<div class="hf-assistant-label" style="margin-top:8px;">${t('localDirectory')}</div>
+        <input type="text" class="hf-assistant-input" id="dl-local-dir" value="${this.escapeHtml(localDir)}" style="margin-bottom:0;">`;
 
     // Authentication (for gated models)
     if (modelInfo && modelInfo.isGated) {
       html += `<div class="hf-assistant-param-group">${t('authentication')}</div>
           <div class="hf-assistant-label">${t('gatedModelTokenHint')}</div>
-          <input type="password" class="hf-assistant-input" id="dl-hf-token" placeholder="${t('howToUseToken')}" value="${this.escapeHtml(hfToken)}">`;
+          <input type="password" class="hf-assistant-input" id="dl-hf-token" placeholder="${t('howToUseToken')}" value="${this.escapeHtml(hfToken)}" style="margin-bottom:0;">`;
     }
 
-    html += `</div>`; // end advanced content
+    html += `</div></div>`; // end advanced content + card
 
-    // ⑥ Generated Command Block
+    // ⑤ Generated Command Block
     const customCmd = this.buildCommand(selectedTool, selectedMirror);
-    html += `<div class="hf-assistant-card-title">${t('generatedCommand')}</div>
-        <div class="hf-download-command-block">
-          <span id="dl-custom-cmd">${this.escapeHtml(customCmd)}</span>
-          <div class="hf-download-command-actions">
-            <button data-action="copy-custom">📋 ${t('copy')}</button>
-            <button data-action="open-terminal">🖥️ ${t('openInTerminal')}</button>
+    html += `<div class="hf-assistant-card">
+        <div class="hf-assistant-card-title" style="margin-bottom:10px;">${t('generatedCommand')}</div>
+        <div class="hf-assistant-command" style="position:relative;padding-bottom:36px;margin-bottom:8px;">
+          <span style="white-space:pre-wrap;word-break:break-all;">${this.escapeHtml(customCmd)}</span>
+          <div style="position:absolute;bottom:6px;right:6px;display:flex;gap:4px;">
+            <button class="hf-assistant-command-copy" data-action="copy-custom">${t('copy')}</button>
+            <button class="hf-assistant-command-copy" data-action="open-terminal" style="right:44px;">${t('openInTerminal')}</button>
           </div>
         </div>`;
 
-    // ⑦ Dynamic Tips
+    // Dynamic Tips
     const tipText = this.getTip();
     if (tipText) {
-      html += `<div class="hf-download-tip">${this.escapeHtml(tipText).replace(/\n/g, '<br>')}</div>`;
+      html += `<div class="hf-download-tip" style="margin-top:0;">${this.escapeHtml(tipText).replace(/\n/g, '<br>')}</div>`;
     }
+
+    html += `</div>`; // end command card
 
     return html;
   },
