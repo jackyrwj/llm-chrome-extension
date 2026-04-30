@@ -4,14 +4,17 @@ const Sidebar = {
   isOpen: true,
   currentTab: 'overview',
   modelInfo: null,
+  currentWidth: 360,
 
   async init() {
     const settings = await Storage.getAll();
     this.isOpen = settings.sidebarDefaultOpen !== false;
     this.currentTab = 'overview';
+    this.currentWidth = settings.sidebarWidth || 360;
 
     this.createSidebar();
     this.bindEvents();
+    this.bindResizeDrag();
 
     if (!this.isOpen) {
       this.collapse();
@@ -24,9 +27,14 @@ const Sidebar = {
 
     this.shadowRoot = wrapper.attachShadow({ mode: 'open' });
 
+    const cssUrl = typeof chrome !== 'undefined' && chrome.runtime
+      ? chrome.runtime.getURL('src/content/sidebar.css')
+      : '';
+
     const template = `
-      <style>${this.getStyles()}</style>
-      <div id="hf-assistant-sidebar" class="hf-assistant-sidebar">
+      ${cssUrl ? `<link rel="stylesheet" href="${cssUrl}">` : `<style>${this.getStyles()}</style>`}
+      <div id="hf-assistant-sidebar" class="hf-assistant-sidebar" style="width:${this.currentWidth}px;">
+        <div class="hf-assistant-resize-handle" id="hf-resize-handle"></div>
         <div class="hf-assistant-header">
           <span class="hf-assistant-title">🤖 <span data-i18n="sidebarTitle">模型助手</span></span>
           <div class="hf-assistant-actions">
@@ -137,9 +145,19 @@ const Sidebar = {
       .hf-assistant-inline-action:hover {
         color: #1d4ed8; text-decoration: underline;
       }
+      *, *::before, *::after { box-sizing: border-box; }
+      .hf-assistant-resize-handle {
+        position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+        cursor: col-resize; z-index: 1; background: transparent;
+        transition: background 0.15s;
+      }
+      .hf-assistant-resize-handle:hover, .hf-assistant-resize-handle.dragging {
+        background: rgba(37, 99, 235, 0.25);
+      }
       .hf-assistant-select, .hf-assistant-input {
         width: 100%; padding: 6px 8px; border: 1px solid #d1d5db;
         border-radius: 6px; font-size: 12px; background: #ffffff; margin-bottom: 8px;
+        box-sizing: border-box;
       }
       .hf-assistant-label {
         display: block; font-size: 11px; font-weight: 500;
@@ -280,5 +298,43 @@ const Sidebar = {
   setModelInfo(info) {
     this.modelInfo = info;
     this.switchTab(this.currentTab);
+  },
+
+  bindResizeDrag() {
+    const handle = this.shadowRoot.querySelector('#hf-resize-handle');
+    const sidebar = this.shadowRoot.querySelector('#hf-assistant-sidebar');
+    let startX = 0;
+    let startWidth = 0;
+
+    handle.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      startX = e.clientX;
+      startWidth = this.currentWidth;
+      handle.classList.add('dragging');
+
+      const onMove = (e) => {
+        const delta = startX - e.clientX;
+        const newWidth = Math.min(Math.max(startWidth + delta, 280), 700);
+        this.currentWidth = newWidth;
+        sidebar.style.width = newWidth + 'px';
+        this.updatePageMargin(newWidth);
+      };
+
+      const onUp = () => {
+        handle.classList.remove('dragging');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        Storage.set('sidebarWidth', this.currentWidth);
+      };
+
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  },
+
+  updatePageMargin(width) {
+    if (window.__HF_ASSISTANT_PLATFORM__ !== 'hf') return;
+    const main = document.querySelector('main, .container, #main-content');
+    if (main) main.style.marginRight = (this.isOpen ? width : 0) + 'px';
   }
 };
