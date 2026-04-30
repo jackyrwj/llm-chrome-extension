@@ -108,17 +108,23 @@ const DeployTab = {
               <optgroup label="其他"><option value="custom">自定义...</option></optgroup>
             </select>
           </div>
-          <div style="display:flex;gap:8px;align-items:flex-end;">
-            <div style="flex:1;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;">
+            <div>
               <label class="hf-assistant-label" style="margin-bottom:2px;">每卡显存 (GB)</label>
-              <input type="number" id="vram-config-gb" class="hf-assistant-input" style="margin-bottom:0;" min="1" max="9999" readonly>
+              <input type="number" id="vram-config-gb" class="hf-assistant-input" style="margin-bottom:0;" min="1" max="9999">
             </div>
-            <div style="width:70px;">
-              <label class="hf-assistant-label" style="margin-bottom:2px;">数量</label>
-              <input type="number" id="vram-config-gpu" class="hf-assistant-input" style="margin-bottom:0;" min="1" max="512" value="1">
+            <div>
+              <label class="hf-assistant-label" style="margin-bottom:2px;">GPU 数量</label>
+              <input type="number" id="vram-config-gpu" class="hf-assistant-input" style="margin-bottom:0;" min="1" max="512"
+                list="gpu-count-list">
+              <datalist id="gpu-count-list">
+                <option value="1"><option value="2"><option value="4">
+                <option value="8"><option value="16"><option value="32">
+                <option value="64"><option value="128">
+              </datalist>
             </div>
-            <div style="padding-bottom:8px;font-size:11px;color:#6b7280;white-space:nowrap;" id="vram-total-label"></div>
           </div>
+          <div id="vram-total-label" style="font-size:11px;color:#6b7280;min-height:16px;"></div>
         </div>
         <div id="vram-display"><div style="color:#9ca3af;font-size:11px;">加载模型信息中…</div></div>
       </div>
@@ -178,25 +184,24 @@ const DeployTab = {
       const perCard = parseInt(vramInput.value) || 0;
       const count   = parseInt(countInput.value) || 1;
       const total   = perCard * count;
-      totalLabel.textContent = count > 1 ? `= ${total} GB` : '';
+      totalLabel.textContent = count > 1 ? `合计 ${total} GB` : '';
       Storage.set('vramGB', total || perCard)
         .then(() => Storage.set('gpuCount', count))
         .then(() => this.updateVramEstimate(container));
     };
 
-    // Restore saved GPU selection
+    // Restore saved state
     const savedGPU   = settings.selectedGPU || '';
-    const savedVram  = settings.vramGB || 24;
+    const savedVram  = settings.vramPerCard || settings.vramGB || 24;
     const savedCount = settings.gpuCount || 1;
     countInput.value = savedCount;
 
-    // Find matching option by name or fall back to custom
+    // Find matching preset option by name
     let matched = false;
     for (const opt of gpuSelect.options) {
       if (opt.dataset.name === savedGPU) {
         gpuSelect.value = opt.value;
-        vramInput.value = opt.value;
-        vramInput.readOnly = true;
+        vramInput.value = savedVram; // allow override even from preset
         matched = true;
         break;
       }
@@ -204,19 +209,16 @@ const DeployTab = {
     if (!matched) {
       gpuSelect.value = 'custom';
       vramInput.value = savedVram;
-      vramInput.readOnly = false;
     }
     updateTotal();
 
     gpuSelect.addEventListener('change', () => {
       const val = gpuSelect.value;
       if (val === 'custom') {
-        vramInput.readOnly = false;
         vramInput.value = '';
         vramInput.focus();
         Storage.set('selectedGPU', '');
       } else {
-        vramInput.readOnly = true;
         vramInput.value = val;
         const name = gpuSelect.options[gpuSelect.selectedIndex]?.dataset.name || '';
         Storage.set('selectedGPU', name);
@@ -224,6 +226,16 @@ const DeployTab = {
       updateTotal();
     });
 
+    vramInput.addEventListener('input', () => {
+      // If user edits VRAM manually, switch preset to custom
+      const selectedName = gpuSelect.options[gpuSelect.selectedIndex]?.dataset.name || '';
+      const presetVram = parseInt(gpuSelect.value);
+      if (selectedName && parseInt(vramInput.value) !== presetVram) {
+        gpuSelect.value = 'custom';
+        Storage.set('selectedGPU', '');
+      }
+      Storage.set('vramPerCard', parseInt(vramInput.value) || 0);
+    });
     vramInput.addEventListener('change', updateTotal);
     countInput.addEventListener('change', updateTotal);
 
