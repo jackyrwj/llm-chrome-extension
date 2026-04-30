@@ -47,6 +47,24 @@ async function handleModelScopeSearch(modelId, endpoint) {
 }
 
 async function handleTranslate(text, provider, apiKey, targetLang) {
+  // Free Google Translate (no API key required)
+  if (provider === 'google_free') {
+    try {
+      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      // Google returns nested array: [[["translated", "original", ...], ...], ...]
+      if (data && data[0]) {
+        const translated = data[0].map(sentence => sentence[0]).join('');
+        return { text: translated };
+      }
+      return { error: 'Translation failed' };
+    } catch (err) {
+      return { error: err.message };
+    }
+  }
+
+  // DeepL (requires API key)
   if (provider === 'deepl' && apiKey) {
     try {
       const response = await fetch('https://api-free.deepl.com/v2/translate', {
@@ -62,6 +80,31 @@ async function handleTranslate(text, provider, apiKey, targetLang) {
       });
       const data = await response.json();
       return { text: data.translations?.[0]?.text };
+    } catch (err) {
+      return { error: err.message };
+    }
+  }
+
+  // OpenAI (requires API key)
+  if (provider === 'openai' && apiKey) {
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'gpt-3.5-turbo',
+          messages: [
+            { role: 'system', content: 'You are a translator. Translate the following text to Chinese. Only output the translation, no explanations.' },
+            { role: 'user', content: text }
+          ],
+          temperature: 0.3
+        })
+      });
+      const data = await response.json();
+      return { text: data.choices?.[0]?.message?.content };
     } catch (err) {
       return { error: err.message };
     }

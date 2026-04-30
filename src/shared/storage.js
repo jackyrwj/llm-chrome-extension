@@ -5,7 +5,7 @@ const Storage = {
     vramGB: 8,
     sidebarDefaultOpen: true,
     language: 'zh',
-    translationProvider: 'none',
+    translationProvider: 'google_free',
     translationApiKey: '',
     modelscopeApiEndpoint: 'https://www.modelscope.cn/api/v1/dolphin/models'
   },

@@ -107,6 +107,12 @@ const DeployTab = {
           <input type="range" class="hf-assistant-input" data-param="${key}"
             value="${value}" min="${config.min}" max="${config.max}" step="${config.step || 0.1}">
         `;
+      } else if (config.type === 'text') {
+        html += `
+          <label class="hf-assistant-label">${label}</label>
+          <input type="text" class="hf-assistant-input" data-param="${key}"
+            value="${value || ''}" placeholder="${config.placeholder || ''}">
+        `;
       } else if (config.type === 'checkbox') {
         html += `
           <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-size: 12px;">
@@ -126,6 +132,13 @@ const DeployTab = {
         if (e.target.type === 'checkbox') val = e.target.checked;
         if (e.target.type === 'number' || e.target.type === 'range') val = parseFloat(val);
         this.currentParams[paramKey] = val;
+        this.updateCommand(container);
+      });
+    });
+    // Also listen for input events on text fields
+    paramsContainer.querySelectorAll('input[data-param][type="text"]').forEach(el => {
+      el.addEventListener('input', (e) => {
+        this.currentParams[e.target.dataset.param] = e.target.value;
         this.updateCommand(container);
       });
     });

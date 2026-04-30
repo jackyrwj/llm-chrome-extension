@@ -5,10 +5,31 @@ const ToolsTab = {
 
   async render(container, modelInfo) {
     this.modelInfo = modelInfo;
+    const settings = await Storage.getAll();
 
     let html = `
       <div class="hf-assistant-card">
         <div class="hf-assistant-card-title">README ${t('translateReadme')}</div>
+
+        <div style="margin-bottom: 12px;">
+          <label class="hf-assistant-label">翻译服务</label>
+          <select class="hf-assistant-select" id="translate-provider-inline" style="margin-bottom: 4px;">
+            <option value="google_free" ${settings.translationProvider === 'google_free' ? 'selected' : ''}>Google Translate (免费)</option>
+            <option value="deepl" ${settings.translationProvider === 'deepl' ? 'selected' : ''}>DeepL</option>
+            <option value="openai" ${settings.translationProvider === 'openai' ? 'selected' : ''}>OpenAI</option>
+            <option value="none" ${settings.translationProvider === 'none' ? 'selected' : ''}>不使用</option>
+          </select>
+          <div id="api-key-row" style="display: ${settings.translationProvider === 'deepl' || settings.translationProvider === 'openai' ? 'block' : 'none'};">
+            <input type="password" class="hf-assistant-input" id="translate-api-key-inline"
+              placeholder="输入 API Key" value="${settings.translationApiKey || ''}">
+          </div>
+          <button class="hf-assistant-btn" id="save-translate-settings"
+                  style="width: 100%; padding: 6px; background: #10b981; color: white;
+                         border-radius: 6px; font-size: 11px; margin-top: 4px;">
+            保存翻译设置
+          </button>
+        </div>
+
         <button class="hf-assistant-btn" id="translate-btn"
                 style="width: 100%; padding: 8px; background: #2563eb; color: white;
                        border-radius: 6px; font-weight: 500; margin-bottom: 12px;">
@@ -29,6 +50,19 @@ const ToolsTab = {
 
     container.innerHTML = html;
     this.rendered = true;
+
+    container.querySelector('#translate-provider-inline').addEventListener('change', (e) => {
+      const needsKey = e.target.value === 'deepl' || e.target.value === 'openai';
+      container.querySelector('#api-key-row').style.display = needsKey ? 'block' : 'none';
+    });
+
+    container.querySelector('#save-translate-settings').addEventListener('click', async () => {
+      const provider = container.querySelector('#translate-provider-inline').value;
+      const apiKey = container.querySelector('#translate-api-key-inline').value;
+      await Storage.set('translationProvider', provider);
+      await Storage.set('translationApiKey', apiKey);
+      Sidebar.showToast('翻译设置已保存');
+    });
 
     container.querySelector('#translate-btn').addEventListener('click', () => {
       this.doTranslate(container);
@@ -53,7 +87,7 @@ const ToolsTab = {
 
     const settings = await Storage.getAll();
     if (settings.translationProvider === 'none') {
-      statusEl.textContent = '请在设置中配置翻译 API';
+      statusEl.textContent = '请先选择翻译服务（推荐 Google Translate 免费）并保存设置';
       btn.disabled = false;
       return;
     }

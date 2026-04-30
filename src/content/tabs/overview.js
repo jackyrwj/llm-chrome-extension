@@ -8,6 +8,7 @@ const OverviewTab = {
     }
 
     const isFav = await Storage.isFavorite(modelInfo.modelId);
+    const favorites = await Storage.getFavorites();
 
     let html = `
       <div class="hf-assistant-card">
@@ -23,6 +24,26 @@ const OverviewTab = {
         </div>` : ''}
       </div>
     `;
+
+    // Favorites list
+    if (favorites.length > 0) {
+      html += `
+        <div class="hf-assistant-card">
+          <div class="hf-assistant-card-title">⭐ 收藏模型 (${favorites.length})</div>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            ${favorites.slice(0, 5).map(f => `
+              <a href="https://huggingface.co/${f.modelId}" target="_blank" class="hf-assistant-link"
+                 style="font-size: 11px; padding: 4px 0; display: flex; justify-content: space-between;"
+                 title="${f.modelId}">
+                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${f.modelId}</span>
+                ${f.modelscopeUrl ? '<span style="color: #10b981; font-size: 10px;">魔搭</span>' : ''}
+              </a>
+            `).join('')}
+            ${favorites.length > 5 ? `<div style="color: #6b7280; font-size: 10px; text-align: center;">还有 ${favorites.length - 5} 个...</div>` : ''}
+          </div>
+        </div>
+      `;
+    }
 
     html += `<div class="hf-assistant-card" id="modelscope-card">
       <div class="hf-assistant-card-title">魔搭社区</div>
@@ -59,23 +80,32 @@ const OverviewTab = {
       console.log('Local mapping not found:', e.message);
     }
 
-    const settings = await Storage.getAll();
-    const apiResult = await API.searchModelScope(modelInfo.modelId, settings.modelscopeApiEndpoint);
-
-    if (apiResult.error || !apiResult.data) {
-      this.showMappingResult(statusEl, null, false);
-      return;
-    }
-
-    const results = apiResult.data.data || apiResult.data.results || [];
+    // Try multiple search keywords for better matching
+    const searchKeywords = this.buildSearchKeywords(modelInfo);
     let bestMatch = null;
     let bestScore = 0;
 
-    for (const result of results) {
-      const score = API.calculateMatchScore(modelInfo.modelId, result);
-      if (score > bestScore) {
-        bestScore = score;
-        bestMatch = result;
+    for (const keyword of searchKeywords) {
+      try {
+        const settings = await Storage.getAll();
+        const apiResult = await API.searchModelScope(keyword, settings.modelscopeApiEndpoint);
+
+        if (apiResult.error || !apiResult.data) continue;
+
+        const results = apiResult.data.data || apiResult.data.results || [];
+
+        for (const result of results) {
+          const score = API.calculateMatchScore(modelInfo.modelId, result);
+          if (score > bestScore) {
+            bestScore = score;
+            bestMatch = result;
+          }
+        }
+
+        // If we found a good match, stop searching
+        if (bestScore > 0.8) break;
+      } catch (e) {
+        console.log('API search failed for keyword:', keyword, e.message);
       }
     }
 
@@ -91,6 +121,40 @@ const OverviewTab = {
     }
   },
 
+  // Build multiple search keywords from model info for better matching
+  buildSearchKeywords(modelInfo) {
+    const keywords = [];
+    const modelId = modelInfo.modelId;
+
+    // Full model ID
+    keywords.push(modelId);
+
+    // Without author prefix
+    if (modelId.includes('/')) {
+      keywords.push(modelId.split('/')[1]);
+    }
+
+    // Without -hf suffix
+    const noHf = modelId.replace(/-hf$/i, '');
+    if (noHf !== modelId) {
+      keywords.push(noHf);
+      if (noHf.includes('/')) {
+        keywords.push(noHf.split('/')[1]);
+      }
+    }
+
+    // Core model name (remove common suffixes)
+    let coreName = modelInfo.repoName || (modelId.includes('/') ? modelId.split('/')[1] : modelId);
+    coreName = coreName
+      .replace(/-hf$/i, '')
+      .replace(/-instruct$/i, '')
+      .replace(/-chat$/i, '')
+      .replace(/-base$/i, '');
+    keywords.push(coreName);
+
+    return [...new Set(keywords)];
+  },
+
   showMappingResult(statusEl, url, found) {
     if (found && url) {
       statusEl.innerHTML = `
@@ -98,10 +162,12 @@ const OverviewTab = {
         <a href="${url}" target="_blank" class="hf-assistant-link" style="word-break: break-all;">${url}</a>
       `;
     } else {
-      const searchUrl = `https://www.modelscope.cn/search?search=${encodeURIComponent(this.modelInfo?.modelId || '')}`;
+      // Use just the repo name (without author) for better search results
+      const searchTerm = this.modelInfo?.repoName || this.modelInfo?.modelId?.split('/')?.[1] || '';
+      const searchUrl = `https://www.modelscope.cn/search?search=${encodeURIComponent(searchTerm)}`;
       statusEl.innerHTML = `
         <div style="color: #dc2626; margin-bottom: 8px;">${t('modelscopeNotFound')}</div>
-        <a href="${searchUrl}" target="_blank" class="hf-assistant-link">${t('gotoSearch')}</a>
+        <a href="${searchUrl}" target="_blank" class="hf-assistant-link">${t('gotoSearch')} (${searchTerm})</a>
       `;
     }
   },

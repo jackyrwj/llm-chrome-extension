@@ -8,7 +8,8 @@ assert(tools.includes('llamacpp'));
 
 const cmd1 = generateCommand('ollama', 'meta-llama/Llama-2-7b', { quant: 'q4_K_M' });
 assert(cmd1.includes('ollama run'));
-assert(cmd1.includes('meta-llama/Llama-2-7b'));
+assert(cmd1.includes('meta-llama/Llama-2-7b:q4_K_M'), `Expected model:quant suffix, got: ${cmd1}`);
+assert(!cmd1.includes('  '), `Command has extra spaces: ${cmd1}`);
 
 const cmd2 = generateCommand('vllm', 'meta-llama/Llama-2-7b', { tp: 2, quant: 'awq' });
 assert(cmd2.includes('vllm serve'));
