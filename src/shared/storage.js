@@ -2,7 +2,10 @@ const Storage = {
   DEFAULTS: {
     defaultTool: 'ollama',
     preferredMirror: 'hf-mirror',
-    vramGB: 8,
+    vramGB: 64,
+    gpuCount: 1,
+    recommendTaskType: 'all',
+    recommendPrecision: 'fp16',
     sidebarDefaultOpen: true,
     language: 'zh',
     translationProvider: 'google_free',
@@ -30,37 +33,69 @@ const Storage = {
 
   async getFavorites() {
     const result = await chrome.storage.sync.get('favorites');
-    return result.favorites || [];
+    return (result.favorites || []).map(f => this.normalizeFavoriteEntry(f)).filter(Boolean);
   },
 
-  async addFavorite(modelId, modelscopeUrl) {
+  normalizeFavoriteEntry(entry) {
+    if (!entry || !entry.modelId) return null;
+    return {
+      modelId: entry.modelId,
+      modelscopeUrl: entry.modelscopeUrl || '',
+      addedAt: entry.addedAt || Date.now(),
+      isModelFavorite: false,
+      commands: Array.isArray(entry.commands) ? entry.commands : []
+    };
+  },
+
+  async saveFavorites(favorites) {
+    await chrome.storage.sync.set({
+      favorites: favorites.filter(Boolean)
+    });
+  },
+
+  async isCommandFavorited(modelId, tool, command) {
     const favorites = await this.getFavorites();
-    if (!favorites.find(f => f.modelId === modelId)) {
-      favorites.push({ modelId, modelscopeUrl, addedAt: Date.now() });
-      await chrome.storage.sync.set({ favorites });
+    const entry = favorites.find(f => f.modelId === modelId);
+    if (!entry) return false;
+    return entry.commands.some(c => c.tool === tool && c.command === command);
+  },
+
+  async addCommandFavorite(modelId, modelscopeUrl, tool, command, params) {
+    const favorites = await this.getFavorites();
+    let entry = favorites.find(f => f.modelId === modelId);
+    if (!entry) {
+      entry = {
+        modelId,
+        modelscopeUrl: modelscopeUrl || '',
+        addedAt: Date.now(),
+        commands: []
+      };
+      favorites.push(entry);
     }
+
+    if (modelscopeUrl && !entry.modelscopeUrl) entry.modelscopeUrl = modelscopeUrl;
+
+    const deduped = entry.commands.filter(c => !(c.tool === tool && c.command === command));
+    deduped.unshift({
+      tool,
+      command,
+      params: { ...params },
+      addedAt: Date.now()
+    });
+    entry.commands = deduped.slice(0, 20);
+
+    await this.saveFavorites(favorites);
   },
 
-  async removeFavorite(modelId) {
-    const favorites = (await this.getFavorites()).filter(f => f.modelId !== modelId);
-    await chrome.storage.sync.set({ favorites });
-  },
-
-  async isFavorite(modelId) {
+  async removeCommandFavorite(modelId, tool, command) {
     const favorites = await this.getFavorites();
-    return favorites.some(f => f.modelId === modelId);
-  },
-
-  async getCommandHistory() {
-    const result = await chrome.storage.local.get('commandHistory');
-    return result.commandHistory || [];
-  },
-
-  async addCommandHistory(tool, command, params) {
-    const history = await this.getCommandHistory();
-    history.unshift({ tool, command, params, timestamp: Date.now() });
-    if (history.length > 20) history.pop();
-    await chrome.storage.local.set({ commandHistory: history });
+    const next = favorites.flatMap(f => {
+      if (f.modelId !== modelId) return [f];
+      const commands = f.commands.filter(c => !(c.tool === tool && c.command === command));
+      if (commands.length === 0) return [];
+      return [{ ...f, commands }];
+    });
+    await this.saveFavorites(next);
   },
 
   async getMappingCache(modelId) {

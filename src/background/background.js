@@ -3,7 +3,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     handleModelScopeSearch(request.modelId, request.endpoint)
       .then(sendResponse)
       .catch(err => sendResponse({ error: err.message }));
-    return true; // async response
+    return true;
   }
 
   if (request.action === 'translate') {
@@ -13,8 +13,72 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
+  if (request.action === 'fetchModelConfig') {
+    handleFetchModelConfig(request.modelId)
+      .then(sendResponse)
+      .catch(err => sendResponse({ error: err.message }));
+    return true;
+  }
+
+  if (request.action === 'fetchHFModels') {
+    handleFetchHFModels(request.filters)
+      .then(sendResponse)
+      .catch(err => sendResponse({ error: err.message }));
+    return true;
+  }
+
   return false;
 });
+
+async function handleFetchModelConfig(modelId) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 6000);
+  try {
+    const res = await fetch(`https://huggingface.co/api/models/${encodeURIComponent(modelId)}`, {
+      signal: controller.signal,
+      headers: { 'Accept': 'application/json' }
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) return { error: `HTTP ${res.status}` };
+    const data = await res.json();
+    return { config: data.config || {} };
+  } catch (err) {
+    clearTimeout(timeoutId);
+    return { error: err.message };
+  }
+}
+
+async function handleFetchHFModels(filters = {}) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+  try {
+    const params = new URLSearchParams({
+      sort: 'downloads',
+      direction: '-1',
+      limit: String(filters.limit || 50)
+    });
+    if (filters.pipeline_tag && filters.pipeline_tag !== 'all') {
+      params.set('filter', filters.pipeline_tag);
+    }
+    if (filters.search) {
+      params.set('search', filters.search);
+    }
+    if (filters.author) {
+      params.set('author', filters.author);
+    }
+    const res = await fetch(`https://huggingface.co/api/models?${params}`, {
+      signal: controller.signal,
+      headers: { 'Accept': 'application/json' }
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) return { error: `HTTP ${res.status}` };
+    const data = await res.json();
+    return { models: data };
+  } catch (err) {
+    clearTimeout(timeoutId);
+    return { error: err.message };
+  }
+}
 
 async function handleModelScopeSearch(modelId, endpoint) {
   const url = `${endpoint}?search=${encodeURIComponent(modelId)}`;

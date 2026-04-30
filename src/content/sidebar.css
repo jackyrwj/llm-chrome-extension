@@ -155,6 +155,22 @@
   letter-spacing: 0.5px;
 }
 
+.hf-assistant-inline-action {
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.hf-assistant-inline-action:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
 .hf-assistant-select,
 .hf-assistant-input {
   width: 100%;
@@ -164,6 +180,7 @@
   font-size: 12px;
   background: #ffffff;
   margin-bottom: 8px;
+  box-sizing: border-box;
 }
 
 .hf-assistant-select:focus,
@@ -215,6 +232,91 @@
 .hf-assistant-status-ok { color: #16a34a; }
 .hf-assistant-status-warning { color: #ca8a04; }
 .hf-assistant-status-insufficient { color: #dc2626; }
+
+.hf-assistant-param-group {
+  font-size: 10px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin: 12px 0 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.hf-assistant-param-group:first-child {
+  margin-top: 4px;
+}
+
+.hf-assistant-param-desc {
+  display: none;
+}
+
+/* 同行布局：label 左，控件右 */
+.hf-param-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.hf-param-row .hf-assistant-label {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hf-param-row .hf-assistant-input[type="number"],
+.hf-param-row .hf-assistant-select {
+  width: 100px;
+  flex-shrink: 0;
+  margin: 0;
+}
+
+/* ⓘ 图标 */
+.hf-assistant-param-tip {
+  display: inline-block;
+  margin-left: 3px;
+  cursor: help;
+  color: #9ca3af;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 400;
+  vertical-align: middle;
+  line-height: 1;
+  user-select: none;
+}
+
+.hf-assistant-param-tip:hover {
+  color: #6b7280;
+}
+
+/* JS tooltip (body 级，不被 overflow 截断) */
+#hf-param-tooltip {
+  position: fixed;
+  display: none;
+  background: #1f2937;
+  color: #f9fafb;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-style: normal;
+  line-height: 1.5;
+  max-width: 220px;
+  white-space: normal;
+  z-index: 9999999;
+  pointer-events: none;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.hf-assistant-range-val {
+  font-weight: 400;
+  color: #374151;
+}
 
 .hf-assistant-link {
   color: #2563eb;

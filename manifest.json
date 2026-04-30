@@ -4,17 +4,10 @@
   "description": "Hugging Face model page assistant with ModelScope mapping, deployment commands, VRAM estimation",
   "version": "1.0.0",
   "permissions": ["activeTab", "storage", "clipboardWrite"],
-  "host_permissions": ["https://huggingface.co/*"],
+  "host_permissions": ["https://huggingface.co/*", "https://www.modelscope.cn/*"],
   "content_scripts": [
     {
-      "matches": ["https://huggingface.co/*/*"],
-      "exclude_matches": [
-        "https://huggingface.co/spaces/*",
-        "https://huggingface.co/datasets/*",
-        "https://huggingface.co/docs/*",
-        "https://huggingface.co/blog/*",
-        "https://huggingface.co/search*"
-      ],
+      "matches": ["https://huggingface.co/*", "https://www.modelscope.cn/*"],
       "js": [
         "src/shared/i18n.js",
         "src/shared/storage.js",
@@ -25,7 +18,8 @@
         "src/content/tabs/overview.js",
         "src/content/tabs/deploy.js",
         "src/content/tabs/download.js",
-        "src/content/tabs/tools.js",
+        "src/content/tabs/favorites.js",
+        "src/content/tabs/recommend.js",
         "src/content/sidebar.js",
         "src/content/content.js"
       ],

@@ -18,7 +18,9 @@ assert(cmd2.includes('--quantization awq'));
 assert(!cmd2.includes('--gpu-memory-utilization'));
 
 const cmd3 = generateCommand('vllm', 'meta-llama/Llama-2-7b', {});
-assert(!cmd3.includes('--tensor-parallel-size'));
+assert(cmd3.includes('--tensor-parallel-size 1'));
+assert(cmd3.includes('--dtype auto'));
+assert(cmd3.includes('--max-model-len 32768'));
 
 const cmd4 = generateCommand('llamacpp', './model.gguf', { ngl: 35, ctx: 8192 });
 assert(cmd4.includes('./main'));

@@ -3,48 +3,53 @@ const DeployTab = {
   currentTool: 'ollama',
   currentParams: {},
   debounceTimer: null,
+  currentCommand: '',
+  commandFavorited: false,
+  pendingCommandFavorite: null,
 
   async render(container, modelInfo) {
     this.modelInfo = modelInfo;
     const settings = await Storage.getAll();
     this.currentTool = settings.defaultTool || 'ollama';
     this.currentParams = {};
+    this.currentCommand = '';
+    this.commandFavorited = false;
 
-    const tools = getSupportedTools();
-    const toolOptions = tools.map(t =>
-      `<option value="${t}" ${t === this.currentTool ? 'selected' : ''}>${getToolLabel(t)}</option>`
-    ).join('');
+    if (this.pendingCommandFavorite && modelInfo && this.pendingCommandFavorite.modelId === modelInfo.modelId) {
+      this.currentTool = this.pendingCommandFavorite.tool;
+      this.currentParams = { ...(this.pendingCommandFavorite.params || {}) };
+      this.pendingCommandFavorite = null;
+    }
 
     let html = `
-      <div class="hf-assistant-card">
-        <div class="hf-assistant-card-title">${t('deployTool')}</div>
-        <select class="hf-assistant-select" id="deploy-tool-select">
-          ${toolOptions}
-        </select>
-        <div id="deploy-params"></div>
+      <div class="hf-assistant-card" id="vram-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;">
+          <div class="hf-assistant-card-title" style="margin:0;">${t('vramEstimate')}</div>
+          <button type="button" class="hf-assistant-inline-action open-options-btn">⚙️配置</button>
+        </div>
+        <div id="vram-display"><div style="color:#9ca3af;font-size:11px;">加载模型信息中…</div></div>
       </div>
 
-      <div class="hf-assistant-card" id="vram-card" style="display: none;">
-        <div class="hf-assistant-card-title">${t('vramEstimate')}</div>
-        <div id="vram-display"></div>
+      <div class="hf-assistant-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;">
+          <div class="hf-assistant-card-title" style="margin:0;">命令 · ${getToolLabel(this.currentTool)}</div>
+          <button type="button" class="hf-assistant-inline-action open-options-btn">⚙️配置</button>
+        </div>
+        <div class="hf-assistant-command" id="command-display">
+          <button class="hf-assistant-command-copy" id="copy-cmd-btn">${t('copyCommand')}</button>
+          <button class="hf-assistant-command-copy" id="favorite-cmd-btn" style="right:84px;">${t('favoriteCommand')}</button>
+          <span id="command-text">加载中…</span>
+        </div>
+        <div style="margin-top:8px;color:#6b7280;font-size:11px;line-height:1.5;">
+          收藏后会出现在“收藏”Tab 对应模型下面，可继续复用。
+        </div>
+        <div class="hf-assistant-card-title" style="margin-bottom:10px;">参数配置</div>
+        <div id="deploy-params"></div>
       </div>
 
       <div class="hf-assistant-card" id="gguf-card" style="display: none;">
         <div class="hf-assistant-card-title">GGUF 推荐</div>
         <div id="gguf-display"></div>
-      </div>
-
-      <div class="hf-assistant-card">
-        <div class="hf-assistant-card-title">命令</div>
-        <div class="hf-assistant-command" id="command-display">
-          <button class="hf-assistant-command-copy" id="copy-cmd-btn">${t('copyCommand')}</button>
-          <span id="command-text">选择一个工具...</span>
-        </div>
-      </div>
-
-      <div class="hf-assistant-card">
-        <div class="hf-assistant-card-title">${t('commandHistory')}</div>
-        <div id="history-display"></div>
       </div>
     `;
 
@@ -54,16 +59,30 @@ const DeployTab = {
     this.bindEvents(container);
     this.renderParams(container);
     this.updateCommand(container);
-    this.renderHistory(container);
+
+    // 异步拉取模型 config（num_hidden_layers、hidden_size、num_key_value_heads 等）
+    // 拿到后刷新显存估算
+    if (modelInfo && modelInfo.modelId) {
+      API.fetchModelConfig(modelInfo.modelId).then(result => {
+        if (result && result.config) {
+          this.modelInfo.config = result.config;
+          this.updateVramEstimate(container);
+        }
+      });
+    }
   },
 
   bindEvents(container) {
-    const toolSelect = container.querySelector('#deploy-tool-select');
-    toolSelect.addEventListener('change', (e) => {
-      this.currentTool = e.target.value;
-      this.currentParams = {};
-      this.renderParams(container);
-      this.updateCommand(container);
+    container.querySelectorAll('.open-options-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        try {
+          if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.openOptionsPage) {
+            await chrome.runtime.openOptionsPage();
+          }
+        } catch (err) {
+          console.error('Open options page failed:', err);
+        }
+      });
     });
 
     container.querySelector('#copy-cmd-btn').addEventListener('click', () => {
@@ -71,76 +90,204 @@ const DeployTab = {
       navigator.clipboard.writeText(cmd).then(() => {
         Sidebar.showToast(t('copied'));
       });
-      Storage.addCommandHistory(this.currentTool, cmd, this.currentParams);
-      this.renderHistory(container);
     });
+
+    container.querySelector('#favorite-cmd-btn').addEventListener('click', async () => {
+      if (!this.modelInfo || !this.currentCommand) return;
+
+      if (this.commandFavorited) {
+        await Storage.removeCommandFavorite(this.modelInfo.modelId, this.currentTool, this.currentCommand);
+        Sidebar.showToast(t('commandRemovedFromFavorites'));
+      } else {
+        await Storage.addCommandFavorite(
+          this.modelInfo.modelId,
+          this.modelInfo.modelscopeUrl || '',
+          this.currentTool,
+          this.currentCommand,
+          this.currentParams
+        );
+        Sidebar.showToast(t('commandSavedToFavorites'));
+      }
+
+      await this.updateCommandFavoriteState(container);
+      if (Sidebar.currentTab === 'favorites' && typeof FavoritesTab !== 'undefined') {
+        FavoritesTab.rendered = false;
+        FavoritesTab.render(Sidebar.getPanel('favorites'));
+      }
+    });
+  },
+
+  syncParamValue(target) {
+    if (!target || !target.dataset || !target.dataset.param) return;
+
+    const paramKey = target.dataset.param;
+    let val = target.value;
+
+    if (target.type === 'checkbox') {
+      val = target.checked;
+    } else if (target.type === 'number' || target.type === 'range') {
+      val = target.value === '' ? '' : parseFloat(target.value);
+    }
+
+    this.currentParams[paramKey] = val;
   },
 
   renderParams(container) {
     const paramsContainer = container.querySelector('#deploy-params');
     const params = getToolParams(this.currentTool);
 
-    let html = '';
-    for (const [key, config] of Object.entries(params)) {
-      const label = key;
-      const value = this.currentParams[key] !== undefined ? this.currentParams[key] : config.default;
+    const esc = s => String(s).replace(/"/g, '&quot;');
+    const tip = cfg => cfg.description
+      ? `<span class="hf-assistant-param-tip" data-tip="${esc(cfg.description)}">ⓘ</span>` : '';
 
+    const buildField = (key, config) => {
+      const value = this.currentParams[key] !== undefined ? this.currentParams[key] : config.default;
+      const flag = config.flag || key;
+
+      if (config.type === 'checkbox') {
+        return `
+          <div class="hf-param-row" style="margin-bottom:6px;">
+            <input type="checkbox" data-param="${key}" ${value ? 'checked' : ''} style="flex-shrink:0;margin:0;">
+            <label class="hf-assistant-label" style="margin:0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;">${flag}${tip(config)}</label>
+          </div>
+        `;
+      }
+      if (config.type === 'number') {
+        return `
+          <div class="hf-param-row">
+            <label class="hf-assistant-label">${flag}${tip(config)}</label>
+            <input type="number" class="hf-assistant-input" data-param="${key}"
+              value="${value}" min="${config.min || 0}" max="${config.max || 999999}">
+          </div>
+        `;
+      }
       if (config.type === 'select') {
         const options = config.options.map(opt =>
           `<option value="${opt}" ${opt === value ? 'selected' : ''}>${opt}</option>`
         ).join('');
-        html += `
-          <label class="hf-assistant-label">${label}</label>
-          <select class="hf-assistant-select" data-param="${key}">
-            ${options}
-          </select>
-        `;
-      } else if (config.type === 'number') {
-        html += `
-          <label class="hf-assistant-label">${label}</label>
-          <input type="number" class="hf-assistant-input" data-param="${key}"
-            value="${value}" min="${config.min || 0}" max="${config.max || 999999}">
-        `;
-      } else if (config.type === 'range') {
-        html += `
-          <label class="hf-assistant-label">${label} (${value})</label>
-          <input type="range" class="hf-assistant-input" data-param="${key}"
-            value="${value}" min="${config.min}" max="${config.max}" step="${config.step || 0.1}">
-        `;
-      } else if (config.type === 'text') {
-        html += `
-          <label class="hf-assistant-label">${label}</label>
-          <input type="text" class="hf-assistant-input" data-param="${key}"
-            value="${value || ''}" placeholder="${config.placeholder || ''}">
-        `;
-      } else if (config.type === 'checkbox') {
-        html += `
-          <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-size: 12px;">
-            <input type="checkbox" data-param="${key}" ${value ? 'checked' : ''}>
-            ${label}
-          </label>
+        return `
+          <div class="hf-param-row">
+            <label class="hf-assistant-label">${flag}${tip(config)}</label>
+            <select class="hf-assistant-select" data-param="${key}">${options}</select>
+          </div>
         `;
       }
+      if (config.type === 'range') {
+        return `
+          <div style="margin-bottom:6px;">
+            <label class="hf-assistant-label" style="margin-bottom:4px;">${flag} <span class="hf-assistant-range-val" data-range-for="${key}">(${value})</span>${tip(config)}</label>
+            <input type="range" class="hf-assistant-input" data-param="${key}" style="margin-bottom:0;"
+              value="${value}" min="${config.min}" max="${config.max}" step="${config.step || 0.1}">
+          </div>
+        `;
+      }
+      if (config.type === 'text') {
+        return `
+          <div style="margin-bottom:6px;">
+            <label class="hf-assistant-label" style="margin-bottom:4px;">${flag}${tip(config)}</label>
+            <input type="text" class="hf-assistant-input" data-param="${key}" style="margin-bottom:0;"
+              value="${esc(value || '')}" placeholder="${esc(config.placeholder || '')}">
+          </div>
+        `;
+      }
+      return '';
+    };
+
+    const commonEntries = [];
+    const advancedGroups = new Map();
+    for (const [key, config] of Object.entries(params)) {
+      if (config.common) {
+        commonEntries.push([key, config]);
+      } else {
+        const g = config.group || '其他';
+        if (!advancedGroups.has(g)) advancedGroups.set(g, []);
+        advancedGroups.get(g).push([key, config]);
+      }
+    }
+
+    let html = '';
+    for (const [key, config] of commonEntries) html += buildField(key, config);
+
+    if (advancedGroups.size > 0) {
+      const isExpanded = this.advancedExpanded || false;
+      html += `
+        <button id="params-advanced-toggle" style="
+          width:100%; margin-top:4px; padding:6px; border:1px dashed #d1d5db;
+          border-radius:6px; background:transparent; cursor:pointer;
+          font-size:11px; color:#6b7280; text-align:center;">
+          ${isExpanded ? '▲ 收起高级参数' : '▼ 展开高级参数'}
+        </button>
+        <div id="params-advanced" style="display:${isExpanded ? 'block' : 'none'}; margin-top:8px;">
+      `;
+      for (const [groupName, entries] of advancedGroups) {
+        html += `<div class="hf-assistant-param-group">${groupName}</div>`;
+        for (const [key, config] of entries) html += buildField(key, config);
+      }
+      html += '</div>';
     }
 
     paramsContainer.innerHTML = html;
 
-    paramsContainer.querySelectorAll('[data-param]').forEach(el => {
-      el.addEventListener('change', (e) => {
-        const paramKey = e.target.dataset.param;
-        let val = e.target.value;
-        if (e.target.type === 'checkbox') val = e.target.checked;
-        if (e.target.type === 'number' || e.target.type === 'range') val = parseFloat(val);
-        this.currentParams[paramKey] = val;
+    const toggleBtn = paramsContainer.querySelector('#params-advanced-toggle');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        this.advancedExpanded = !this.advancedExpanded;
+        const adv = paramsContainer.querySelector('#params-advanced');
+        adv.style.display = this.advancedExpanded ? 'block' : 'none';
+        toggleBtn.textContent = this.advancedExpanded ? '▲ 收起高级参数' : '▼ 展开高级参数';
+      });
+    }
+
+    // JS tooltip（挂到 body，避免被 overflow:auto 截断）
+    let tooltipEl = document.getElementById('hf-param-tooltip');
+    if (!tooltipEl) {
+      tooltipEl = document.createElement('div');
+      tooltipEl.id = 'hf-param-tooltip';
+      document.body.appendChild(tooltipEl);
+    }
+    paramsContainer.querySelectorAll('.hf-assistant-param-tip').forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        tooltipEl.textContent = el.dataset.tip;
+        tooltipEl.style.display = 'block';
+        const r = el.getBoundingClientRect();
+        const tw = tooltipEl.offsetWidth;
+        const th = tooltipEl.offsetHeight;
+        let left = r.left + r.width / 2 - tw / 2;
+        left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+        let top = r.top - th - 8;
+        if (top < 8) top = r.bottom + 8;
+        tooltipEl.style.left = left + 'px';
+        tooltipEl.style.top = top + 'px';
+      });
+      el.addEventListener('mouseleave', () => {
+        tooltipEl.style.display = 'none';
+      });
+    });
+
+    // Range sliders: update value badge live
+    paramsContainer.querySelectorAll('input[type="range"][data-param]').forEach(el => {
+      el.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        const badge = paramsContainer.querySelector(`[data-range-for="${e.target.dataset.param}"]`);
+        if (badge) badge.textContent = `(${val})`;
+        this.syncParamValue(e.target);
         this.updateCommand(container);
       });
     });
-    // Also listen for input events on text fields
-    paramsContainer.querySelectorAll('input[data-param][type="text"]').forEach(el => {
-      el.addEventListener('input', (e) => {
-        this.currentParams[e.target.dataset.param] = e.target.value;
+
+    paramsContainer.querySelectorAll('[data-param]').forEach(el => {
+      if (el.type === 'range') return;
+      const handler = (e) => {
+        this.syncParamValue(e.target);
         this.updateCommand(container);
-      });
+      };
+
+      if (el.tagName === 'SELECT' || el.type === 'checkbox') {
+        el.addEventListener('change', handler);
+      } else {
+        el.addEventListener('input', handler);
+        el.addEventListener('change', handler);
+      }
     });
 
     const ggufCard = container.querySelector('#gguf-card');
@@ -161,45 +308,79 @@ const DeployTab = {
         this.currentParams.ggufFile : this.modelInfo.modelId;
 
       const cmd = generateCommand(this.currentTool, modelId, this.currentParams);
-      container.querySelector('#command-text').textContent = cmd;
+      const cmdEl = container.querySelector('#command-text');
+      cmdEl.textContent = cmd;
+      cmdEl.style.paddingTop = '28px';
+      this.currentCommand = cmd;
+      this.updateCommandFavoriteState(container);
 
       this.updateVramEstimate(container);
     }, 100);
+  },
+
+  async updateCommandFavoriteState(container) {
+    const btn = container.querySelector('#favorite-cmd-btn');
+    if (!btn || !this.modelInfo || !this.currentCommand) return;
+
+    const isFavorited = await Storage.isCommandFavorited(
+      this.modelInfo.modelId,
+      this.currentTool,
+      this.currentCommand
+    );
+    this.commandFavorited = isFavorited;
+    btn.textContent = isFavorited ? t('unfavoriteCommand') : t('favoriteCommand');
+    btn.style.background = isFavorited ? '#92400e' : '#374151';
+  },
+
+  queueFavoriteCommand(modelId, commandEntry) {
+    this.pendingCommandFavorite = {
+      modelId,
+      tool: commandEntry.tool,
+      params: { ...(commandEntry.params || {}) }
+    };
   },
 
   async updateVramEstimate(container) {
     if (!this.modelInfo) return;
 
     const settings = await Storage.getAll();
+    const userVramGB = settings.vramGB || 64;
     const precision = this.inferPrecision();
 
     const estimate = estimateVRAM(this.modelInfo, {
       precision,
       tool: this.currentTool,
-      userVramGB: settings.vramGB,
+      userVramGB,
       maxModelLen: this.currentParams.maxModelLen || this.currentParams.ctx || 4096
     });
 
-    const vramCard = container.querySelector('#vram-card');
     const vramDisplay = container.querySelector('#vram-display');
+    if (!vramDisplay) return;
 
-    if (estimate.vramGB !== null) {
-      vramCard.style.display = 'block';
-      const statusClass = `hf-assistant-status-${estimate.status}`;
-      const statusText = estimate.status === 'ok' ? t('vramOk') :
-                         estimate.status === 'warning' ? t('vramWarning') : t('vramInsufficient');
-      vramDisplay.innerHTML = `
-        <div style="font-size: 18px; font-weight: 600; margin-bottom: 4px;">
-          ${estimate.vramGB} GB
-        </div>
-        <div class="${statusClass}">${statusText}</div>
-        <div style="color: #6b7280; font-size: 10px; margin-top: 4px;">
-          基于 ${estimate.paramsB}B 参数 x ${estimate.precision}
-        </div>
-      `;
-    } else {
-      vramCard.style.display = 'none';
+    if (estimate.vramGB === null) {
+      vramDisplay.innerHTML = '<div style="color:#9ca3af;font-size:11px;">无法识别模型参数量</div>';
+      return;
     }
+
+    const statusClass = `hf-assistant-status-${estimate.status}`;
+    const statusText = estimate.status === 'ok' ? t('vramOk') :
+                       estimate.status === 'warning' ? t('vramWarning') : t('vramInsufficient');
+    const sourceTag = estimate.configLoaded
+      ? '<span style="color:#16a34a;">● 实际配置</span>'
+      : '<span style="color:#ca8a04;">● 估算</span>';
+    const archInfo = estimate.numLayers
+      ? `${estimate.numLayers}层 · hidden ${estimate.hiddenSize} · KV头 ${estimate.numKVHeads}`
+      : '架构参数不可用';
+
+    vramDisplay.innerHTML = `
+      <div style="font-size:18px;font-weight:600;margin-bottom:4px;">${estimate.vramGB} GB</div>
+      <div class="${statusClass}">${statusText}</div>
+      <div style="color:#6b7280;font-size:10px;margin-top:6px;line-height:1.6;">
+        <div>${estimate.paramsB}B 参数 · ${estimate.precision} · ${sourceTag}</div>
+        <div>${archInfo}</div>
+        <div style="margin-top:4px;color:#d1d5db;">基于 ${userVramGB}GB 显存 · 可在顶部 ⚙️ 中调整</div>
+      </div>
+    `;
   },
 
   inferPrecision() {
@@ -280,35 +461,5 @@ const DeployTab = {
     });
   },
 
-  async renderHistory(container) {
-    const history = await Storage.getCommandHistory();
-    const display = container.querySelector('#history-display');
-
-    if (!history.length) {
-      display.innerHTML = '<div style="color: #6b7280; font-size: 11px;">暂无历史记录</div>';
-      return;
-    }
-
-    const items = history.slice(0, 5).map(h => `
-      <div class="hf-assistant-history-item">
-        <span class="hf-assistant-history-cmd" title="${h.command}">[${getToolLabel(h.tool)}] ${h.command}</span>
-        <button class="hf-assistant-btn reuse-btn" data-tool="${h.tool}" style="font-size: 10px; padding: 2px 6px;">复用</button>
-      </div>
-    `).join('');
-
-    display.innerHTML = items;
-
-    display.querySelectorAll('.reuse-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const entry = history.find(h => h.tool === btn.dataset.tool);
-        if (entry) {
-          this.currentTool = entry.tool;
-          this.currentParams = { ...entry.params };
-          container.querySelector('#deploy-tool-select').value = entry.tool;
-          this.renderParams(container);
-          this.updateCommand(container);
-        }
-      });
-    });
-  }
+  async renderHistory() {}
 };

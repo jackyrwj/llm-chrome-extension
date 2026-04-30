@@ -2,8 +2,7 @@
   "meta-llama/Llama-2-7b-hf": {
     "modelscope": "LLM-Research/Llama-2-7b-hf",
     "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Llama-2-7b-hf",
-    "lastVerified": "2026-04-01",
-    "notes": "Official mirror"
+    "lastVerified": "2026-04-01"
   },
   "meta-llama/Llama-2-7b-chat-hf": {
     "modelscope": "LLM-Research/Llama-2-7b-chat-hf",
@@ -35,14 +34,54 @@
     "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Meta-Llama-3-8B-Instruct",
     "lastVerified": "2026-04-01"
   },
-  "mistralai/Mistral-7B-v0.1": {
-    "modelscope": "AI-ModelScope/Mistral-7B-v0.1",
-    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/Mistral-7B-v0.1",
+  "meta-llama/Meta-Llama-3-70B": {
+    "modelscope": "LLM-Research/Meta-Llama-3-70B",
+    "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Meta-Llama-3-70B",
     "lastVerified": "2026-04-01"
   },
-  "mistralai/Mistral-7B-Instruct-v0.1": {
-    "modelscope": "AI-ModelScope/Mistral-7B-Instruct-v0.1",
-    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/Mistral-7B-Instruct-v0.1",
+  "meta-llama/Meta-Llama-3-70B-Instruct": {
+    "modelscope": "LLM-Research/Meta-Llama-3-70B-Instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Meta-Llama-3-70B-Instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "meta-llama/Meta-Llama-3.1-8B": {
+    "modelscope": "LLM-Research/Meta-Llama-3.1-8B",
+    "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Meta-Llama-3.1-8B",
+    "lastVerified": "2026-04-01"
+  },
+  "meta-llama/Meta-Llama-3.1-8B-Instruct": {
+    "modelscope": "LLM-Research/Meta-Llama-3.1-8B-Instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Meta-Llama-3.1-8B-Instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "meta-llama/Meta-Llama-3.1-70B-Instruct": {
+    "modelscope": "LLM-Research/Meta-Llama-3.1-70B-Instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Meta-Llama-3.1-70B-Instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "meta-llama/Llama-3.2-1B": {
+    "modelscope": "LLM-Research/Llama-3.2-1B",
+    "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Llama-3.2-1B",
+    "lastVerified": "2026-04-01"
+  },
+  "meta-llama/Llama-3.2-1B-Instruct": {
+    "modelscope": "LLM-Research/Llama-3.2-1B-Instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Llama-3.2-1B-Instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "meta-llama/Llama-3.2-3B": {
+    "modelscope": "LLM-Research/Llama-3.2-3B",
+    "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Llama-3.2-3B",
+    "lastVerified": "2026-04-01"
+  },
+  "meta-llama/Llama-3.2-3B-Instruct": {
+    "modelscope": "LLM-Research/Llama-3.2-3B-Instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Llama-3.2-3B-Instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "meta-llama/Llama-3.3-70B-Instruct": {
+    "modelscope": "LLM-Research/Llama-3.3-70B-Instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Llama-3.3-70B-Instruct",
     "lastVerified": "2026-04-01"
   },
   "Qwen/Qwen2-7B": {
@@ -55,14 +94,624 @@
     "modelscopeUrl": "https://www.modelscope.cn/models/qwen/Qwen2-7B-Instruct",
     "lastVerified": "2026-04-01"
   },
+  "Qwen/Qwen2-72B": {
+    "modelscope": "qwen/Qwen2-72B",
+    "modelscopeUrl": "https://www.modelscope.cn/models/qwen/Qwen2-72B",
+    "lastVerified": "2026-04-01"
+  },
+  "Qwen/Qwen2-72B-Instruct": {
+    "modelscope": "qwen/Qwen2-72B-Instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/qwen/Qwen2-72B-Instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "Qwen/Qwen2.5-7B": {
+    "modelscope": "qwen/Qwen2.5-7B",
+    "modelscopeUrl": "https://www.modelscope.cn/models/qwen/Qwen2.5-7B",
+    "lastVerified": "2026-04-01"
+  },
+  "Qwen/Qwen2.5-7B-Instruct": {
+    "modelscope": "qwen/Qwen2.5-7B-Instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/qwen/Qwen2.5-7B-Instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "Qwen/Qwen2.5-14B-Instruct": {
+    "modelscope": "qwen/Qwen2.5-14B-Instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/qwen/Qwen2.5-14B-Instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "Qwen/Qwen2.5-32B-Instruct": {
+    "modelscope": "qwen/Qwen2.5-32B-Instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/qwen/Qwen2.5-32B-Instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "Qwen/Qwen2.5-72B-Instruct": {
+    "modelscope": "qwen/Qwen2.5-72B-Instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/qwen/Qwen2.5-72B-Instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "Qwen/Qwen2.5-Coder-7B-Instruct": {
+    "modelscope": "qwen/Qwen2.5-Coder-7B-Instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/qwen/Qwen2.5-Coder-7B-Instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "Qwen/Qwen2.5-Coder-14B-Instruct": {
+    "modelscope": "qwen/Qwen2.5-Coder-14B-Instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/qwen/Qwen2.5-Coder-14B-Instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "Qwen/Qwen2.5-Coder-32B-Instruct": {
+    "modelscope": "qwen/Qwen2.5-Coder-32B-Instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/qwen/Qwen2.5-Coder-32B-Instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "Qwen/QwQ-32B": {
+    "modelscope": "qwen/QwQ-32B",
+    "modelscopeUrl": "https://www.modelscope.cn/models/qwen/QwQ-32B",
+    "lastVerified": "2026-04-01"
+  },
+  "Qwen/QwQ-32B-Preview": {
+    "modelscope": "qwen/QwQ-32B-Preview",
+    "modelscopeUrl": "https://www.modelscope.cn/models/qwen/QwQ-32B-Preview",
+    "lastVerified": "2026-04-01"
+  },
+  "Qwen/Qwen3-8B": {
+    "modelscope": "qwen/Qwen3-8B",
+    "modelscopeUrl": "https://www.modelscope.cn/models/qwen/Qwen3-8B",
+    "lastVerified": "2026-04-01"
+  },
+  "Qwen/Qwen3-30B-A3B": {
+    "modelscope": "qwen/Qwen3-30B-A3B",
+    "modelscopeUrl": "https://www.modelscope.cn/models/qwen/Qwen3-30B-A3B",
+    "lastVerified": "2026-04-01"
+  },
+  "deepseek-ai/deepseek-llm-7b-base": {
+    "modelscope": "deepseek-ai/deepseek-llm-7b-base",
+    "modelscopeUrl": "https://www.modelscope.cn/models/deepseek-ai/deepseek-llm-7b-base",
+    "lastVerified": "2026-04-01"
+  },
+  "deepseek-ai/deepseek-llm-7b-chat": {
+    "modelscope": "deepseek-ai/deepseek-llm-7b-chat",
+    "modelscopeUrl": "https://www.modelscope.cn/models/deepseek-ai/deepseek-llm-7b-chat",
+    "lastVerified": "2026-04-01"
+  },
+  "deepseek-ai/deepseek-llm-67b-base": {
+    "modelscope": "deepseek-ai/deepseek-llm-67b-base",
+    "modelscopeUrl": "https://www.modelscope.cn/models/deepseek-ai/deepseek-llm-67b-base",
+    "lastVerified": "2026-04-01"
+  },
+  "deepseek-ai/deepseek-llm-67b-chat": {
+    "modelscope": "deepseek-ai/deepseek-llm-67b-chat",
+    "modelscopeUrl": "https://www.modelscope.cn/models/deepseek-ai/deepseek-llm-67b-chat",
+    "lastVerified": "2026-04-01"
+  },
+  "deepseek-ai/DeepSeek-V2": {
+    "modelscope": "deepseek-ai/DeepSeek-V2",
+    "modelscopeUrl": "https://www.modelscope.cn/models/deepseek-ai/DeepSeek-V2",
+    "lastVerified": "2026-04-01"
+  },
+  "deepseek-ai/DeepSeek-V2-Chat": {
+    "modelscope": "deepseek-ai/DeepSeek-V2-Chat",
+    "modelscopeUrl": "https://www.modelscope.cn/models/deepseek-ai/DeepSeek-V2-Chat",
+    "lastVerified": "2026-04-01"
+  },
+  "deepseek-ai/DeepSeek-V2.5": {
+    "modelscope": "deepseek-ai/DeepSeek-V2.5",
+    "modelscopeUrl": "https://www.modelscope.cn/models/deepseek-ai/DeepSeek-V2.5",
+    "lastVerified": "2026-04-01"
+  },
+  "deepseek-ai/DeepSeek-V3": {
+    "modelscope": "deepseek-ai/DeepSeek-V3",
+    "modelscopeUrl": "https://www.modelscope.cn/models/deepseek-ai/DeepSeek-V3",
+    "lastVerified": "2026-04-01"
+  },
+  "deepseek-ai/DeepSeek-R1": {
+    "modelscope": "deepseek-ai/DeepSeek-R1",
+    "modelscopeUrl": "https://www.modelscope.cn/models/deepseek-ai/DeepSeek-R1",
+    "lastVerified": "2026-04-01"
+  },
+  "deepseek-ai/DeepSeek-Coder-V2-Instruct": {
+    "modelscope": "deepseek-ai/DeepSeek-Coder-V2-Instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/deepseek-ai/DeepSeek-Coder-V2-Instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "deepseek-ai/DeepSeek-Coder-V2-Lite-Instruct": {
+    "modelscope": "deepseek-ai/DeepSeek-Coder-V2-Lite-Instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/deepseek-ai/DeepSeek-Coder-V2-Lite-Instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "deepseek-ai/Janus-Pro-7B": {
+    "modelscope": "deepseek-ai/Janus-Pro-7B",
+    "modelscopeUrl": "https://www.modelscope.cn/models/deepseek-ai/Janus-Pro-7B",
+    "lastVerified": "2026-04-01"
+  },
+  "mistralai/Mistral-7B-v0.1": {
+    "modelscope": "AI-ModelScope/Mistral-7B-v0.1",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/Mistral-7B-v0.1",
+    "lastVerified": "2026-04-01"
+  },
+  "mistralai/Mistral-7B-Instruct-v0.1": {
+    "modelscope": "AI-ModelScope/Mistral-7B-Instruct-v0.1",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/Mistral-7B-Instruct-v0.1",
+    "lastVerified": "2026-04-01"
+  },
+  "mistralai/Mistral-7B-Instruct-v0.2": {
+    "modelscope": "AI-ModelScope/Mistral-7B-Instruct-v0.2",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/Mistral-7B-Instruct-v0.2",
+    "lastVerified": "2026-04-01"
+  },
+  "mistralai/Mistral-7B-Instruct-v0.3": {
+    "modelscope": "AI-ModelScope/Mistral-7B-Instruct-v0.3",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/Mistral-7B-Instruct-v0.3",
+    "lastVerified": "2026-04-01"
+  },
+  "mistralai/Mixtral-8x7B-Instruct-v0.1": {
+    "modelscope": "AI-ModelScope/Mixtral-8x7B-Instruct-v0.1",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/Mixtral-8x7B-Instruct-v0.1",
+    "lastVerified": "2026-04-01"
+  },
+  "mistralai/Mixtral-8x22B-Instruct-v0.1": {
+    "modelscope": "AI-ModelScope/Mixtral-8x22B-Instruct-v0.1",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/Mixtral-8x22B-Instruct-v0.1",
+    "lastVerified": "2026-04-01"
+  },
+  "mistralai/Mistral-Nemo-Instruct-2407": {
+    "modelscope": "AI-ModelScope/Mistral-Nemo-Instruct-2407",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/Mistral-Nemo-Instruct-2407",
+    "lastVerified": "2026-04-01"
+  },
+  "mistralai/Mistral-Small-Instruct-2409": {
+    "modelscope": "AI-ModelScope/Mistral-Small-Instruct-2409",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/Mistral-Small-Instruct-2409",
+    "lastVerified": "2026-04-01"
+  },
+  "mistralai/Mistral-Large-Instruct-2407": {
+    "modelscope": "AI-ModelScope/Mistral-Large-Instruct-2407",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/Mistral-Large-Instruct-2407",
+    "lastVerified": "2026-04-01"
+  },
   "google/gemma-2b": {
     "modelscope": "AI-ModelScope/gemma-2b-it",
     "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/gemma-2b-it",
     "lastVerified": "2026-04-01"
   },
+  "google/gemma-2b-it": {
+    "modelscope": "AI-ModelScope/gemma-2b-it",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/gemma-2b-it",
+    "lastVerified": "2026-04-01"
+  },
+  "google/gemma-7b": {
+    "modelscope": "AI-ModelScope/gemma-7b-it",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/gemma-7b-it",
+    "lastVerified": "2026-04-01"
+  },
+  "google/gemma-7b-it": {
+    "modelscope": "AI-ModelScope/gemma-7b-it",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/gemma-7b-it",
+    "lastVerified": "2026-04-01"
+  },
+  "google/gemma-2-2b-it": {
+    "modelscope": "AI-ModelScope/gemma-2-2b-it",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/gemma-2-2b-it",
+    "lastVerified": "2026-04-01"
+  },
+  "google/gemma-2-9b-it": {
+    "modelscope": "AI-ModelScope/gemma-2-9b-it",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/gemma-2-9b-it",
+    "lastVerified": "2026-04-01"
+  },
+  "google/gemma-2-27b-it": {
+    "modelscope": "AI-ModelScope/gemma-2-27b-it",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/gemma-2-27b-it",
+    "lastVerified": "2026-04-01"
+  },
+  "google/gemma-3-1b-it": {
+    "modelscope": "AI-ModelScope/gemma-3-1b-it",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/gemma-3-1b-it",
+    "lastVerified": "2026-04-01"
+  },
+  "google/gemma-3-4b-it": {
+    "modelscope": "AI-ModelScope/gemma-3-4b-it",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/gemma-3-4b-it",
+    "lastVerified": "2026-04-01"
+  },
+  "google/gemma-3-12b-it": {
+    "modelscope": "AI-ModelScope/gemma-3-12b-it",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/gemma-3-12b-it",
+    "lastVerified": "2026-04-01"
+  },
+  "google/gemma-3-27b-it": {
+    "modelscope": "AI-ModelScope/gemma-3-27b-it",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/gemma-3-27b-it",
+    "lastVerified": "2026-04-01"
+  },
   "microsoft/Phi-3-mini-4k-instruct": {
     "modelscope": "LLM-Research/Phi-3-mini-4k-instruct",
     "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Phi-3-mini-4k-instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "microsoft/Phi-3-mini-128k-instruct": {
+    "modelscope": "LLM-Research/Phi-3-mini-128k-instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Phi-3-mini-128k-instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "microsoft/Phi-3-small-8k-instruct": {
+    "modelscope": "LLM-Research/Phi-3-small-8k-instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Phi-3-small-8k-instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "microsoft/Phi-3-small-128k-instruct": {
+    "modelscope": "LLM-Research/Phi-3-small-128k-instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Phi-3-small-128k-instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "microsoft/Phi-3-medium-4k-instruct": {
+    "modelscope": "LLM-Research/Phi-3-medium-4k-instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Phi-3-medium-4k-instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "microsoft/Phi-3-medium-128k-instruct": {
+    "modelscope": "LLM-Research/Phi-3-medium-128k-instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Phi-3-medium-128k-instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "microsoft/Phi-3.5-mini-instruct": {
+    "modelscope": "LLM-Research/Phi-3.5-mini-instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Phi-3.5-mini-instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "microsoft/Phi-3.5-MoE-instruct": {
+    "modelscope": "LLM-Research/Phi-3.5-MoE-instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Phi-3.5-MoE-instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "microsoft/Phi-4": {
+    "modelscope": "LLM-Research/Phi-4",
+    "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Phi-4",
+    "lastVerified": "2026-04-01"
+  },
+  "microsoft/Phi-4-mini-instruct": {
+    "modelscope": "LLM-Research/Phi-4-mini-instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Phi-4-mini-instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "01-ai/Yi-6B": {
+    "modelscope": "01ai/Yi-6B",
+    "modelscopeUrl": "https://www.modelscope.cn/models/01ai/Yi-6B",
+    "lastVerified": "2026-04-01"
+  },
+  "01-ai/Yi-6B-Chat": {
+    "modelscope": "01ai/Yi-6B-Chat",
+    "modelscopeUrl": "https://www.modelscope.cn/models/01ai/Yi-6B-Chat",
+    "lastVerified": "2026-04-01"
+  },
+  "01-ai/Yi-34B": {
+    "modelscope": "01ai/Yi-34B",
+    "modelscopeUrl": "https://www.modelscope.cn/models/01ai/Yi-34B",
+    "lastVerified": "2026-04-01"
+  },
+  "01-ai/Yi-34B-Chat": {
+    "modelscope": "01ai/Yi-34B-Chat",
+    "modelscopeUrl": "https://www.modelscope.cn/models/01ai/Yi-34B-Chat",
+    "lastVerified": "2026-04-01"
+  },
+  "01-ai/Yi-1.5-6B": {
+    "modelscope": "01ai/Yi-1.5-6B",
+    "modelscopeUrl": "https://www.modelscope.cn/models/01ai/Yi-1.5-6B",
+    "lastVerified": "2026-04-01"
+  },
+  "01-ai/Yi-1.5-9B": {
+    "modelscope": "01ai/Yi-1.5-9B",
+    "modelscopeUrl": "https://www.modelscope.cn/models/01ai/Yi-1.5-9B",
+    "lastVerified": "2026-04-01"
+  },
+  "01-ai/Yi-1.5-34B": {
+    "modelscope": "01ai/Yi-1.5-34B",
+    "modelscopeUrl": "https://www.modelscope.cn/models/01ai/Yi-1.5-34B",
+    "lastVerified": "2026-04-01"
+  },
+  "THUDM/chatglm3-6b": {
+    "modelscope": "ZhipuAI/chatglm3-6b",
+    "modelscopeUrl": "https://www.modelscope.cn/models/ZhipuAI/chatglm3-6b",
+    "lastVerified": "2026-04-01"
+  },
+  "THUDM/chatglm3-6b-base": {
+    "modelscope": "ZhipuAI/chatglm3-6b-base",
+    "modelscopeUrl": "https://www.modelscope.cn/models/ZhipuAI/chatglm3-6b-base",
+    "lastVerified": "2026-04-01"
+  },
+  "THUDM/glm-4-9b-chat": {
+    "modelscope": "ZhipuAI/glm-4-9b-chat",
+    "modelscopeUrl": "https://www.modelscope.cn/models/ZhipuAI/glm-4-9b-chat",
+    "lastVerified": "2026-04-01"
+  },
+  "THUDM/glm-4-9b": {
+    "modelscope": "ZhipuAI/glm-4-9b",
+    "modelscopeUrl": "https://www.modelscope.cn/models/ZhipuAI/glm-4-9b",
+    "lastVerified": "2026-04-01"
+  },
+  "THUDM/glm-4-9b-chat-1m": {
+    "modelscope": "ZhipuAI/glm-4-9b-chat-1m",
+    "modelscopeUrl": "https://www.modelscope.cn/models/ZhipuAI/glm-4-9b-chat-1m",
+    "lastVerified": "2026-04-01"
+  },
+  "internlm/internlm2-7b": {
+    "modelscope": "Shanghai_AI_Laboratory/internlm2-7b",
+    "modelscopeUrl": "https://www.modelscope.cn/models/Shanghai_AI_Laboratory/internlm2-7b",
+    "lastVerified": "2026-04-01"
+  },
+  "internlm/internlm2-7b-chat": {
+    "modelscope": "Shanghai_AI_Laboratory/internlm2-7b-chat",
+    "modelscopeUrl": "https://www.modelscope.cn/models/Shanghai_AI_Laboratory/internlm2-7b-chat",
+    "lastVerified": "2026-04-01"
+  },
+  "internlm/internlm2-20b": {
+    "modelscope": "Shanghai_AI_Laboratory/internlm2-20b",
+    "modelscopeUrl": "https://www.modelscope.cn/models/Shanghai_AI_Laboratory/internlm2-20b",
+    "lastVerified": "2026-04-01"
+  },
+  "internlm/internlm2-20b-chat": {
+    "modelscope": "Shanghai_AI_Laboratory/internlm2-20b-chat",
+    "modelscopeUrl": "https://www.modelscope.cn/models/Shanghai_AI_Laboratory/internlm2-20b-chat",
+    "lastVerified": "2026-04-01"
+  },
+  "internlm/internlm2.5-7b-chat": {
+    "modelscope": "Shanghai_AI_Laboratory/internlm2_5-7b-chat",
+    "modelscopeUrl": "https://www.modelscope.cn/models/Shanghai_AI_Laboratory/internlm2_5-7b-chat",
+    "lastVerified": "2026-04-01"
+  },
+  "internlm/internlm2.5-20b-chat": {
+    "modelscope": "Shanghai_AI_Laboratory/internlm2_5-20b-chat",
+    "modelscopeUrl": "https://www.modelscope.cn/models/Shanghai_AI_Laboratory/internlm2_5-20b-chat",
+    "lastVerified": "2026-04-01"
+  },
+  "NousResearch/Nous-Hermes-2-Yi-34B": {
+    "modelscope": "AI-ModelScope/Nous-Hermes-2-Yi-34B",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/Nous-Hermes-2-Yi-34B",
+    "lastVerified": "2026-04-01"
+  },
+  "openbmb/MiniCPM-2B-sft-bf16": {
+    "modelscope": "OpenBMB/MiniCPM-2B-sft-bf16",
+    "modelscopeUrl": "https://www.modelscope.cn/models/OpenBMB/MiniCPM-2B-sft-bf16",
+    "lastVerified": "2026-04-01"
+  },
+  "openbmb/MiniCPM-2B-dpo-bf16": {
+    "modelscope": "OpenBMB/MiniCPM-2B-dpo-bf16",
+    "modelscopeUrl": "https://www.modelscope.cn/models/OpenBMB/MiniCPM-2B-dpo-bf16",
+    "lastVerified": "2026-04-01"
+  },
+  "openbmb/MiniCPM3-4B": {
+    "modelscope": "OpenBMB/MiniCPM3-4B",
+    "modelscopeUrl": "https://www.modelscope.cn/models/OpenBMB/MiniCPM3-4B",
+    "lastVerified": "2026-04-01"
+  },
+  "openbmb/MiniCPM-V-2_6": {
+    "modelscope": "OpenBMB/MiniCPM-V-2_6",
+    "modelscopeUrl": "https://www.modelscope.cn/models/OpenBMB/MiniCPM-V-2_6",
+    "lastVerified": "2026-04-01"
+  },
+  "CohereForAI/aya-23-8B": {
+    "modelscope": "AI-ModelScope/aya-23-8B",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/aya-23-8B",
+    "lastVerified": "2026-04-01"
+  },
+  "CohereForAI/aya-23-35B": {
+    "modelscope": "AI-ModelScope/aya-23-35B",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/aya-23-35B",
+    "lastVerified": "2026-04-01"
+  },
+  "CohereForAI/aya-expanse-8b": {
+    "modelscope": "AI-ModelScope/aya-expanse-8b",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/aya-expanse-8b",
+    "lastVerified": "2026-04-01"
+  },
+  "CohereForAI/aya-expanse-32b": {
+    "modelscope": "AI-ModelScope/aya-expanse-32b",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/aya-expanse-32b",
+    "lastVerified": "2026-04-01"
+  },
+  "bigscience/bloom-7b1": {
+    "modelscope": "AI-ModelScope/bloom-7b1",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/bloom-7b1",
+    "lastVerified": "2026-04-01"
+  },
+  "bigscience/bloomz-7b1": {
+    "modelscope": "AI-ModelScope/bloomz-7b1",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/bloomz-7b1",
+    "lastVerified": "2026-04-01"
+  },
+  "tiiuae/falcon-7b": {
+    "modelscope": "AI-ModelScope/falcon-7b",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/falcon-7b",
+    "lastVerified": "2026-04-01"
+  },
+  "tiiuae/falcon-7b-instruct": {
+    "modelscope": "AI-ModelScope/falcon-7b-instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/falcon-7b-instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "tiiuae/falcon-40b": {
+    "modelscope": "AI-ModelScope/falcon-40b",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/falcon-40b",
+    "lastVerified": "2026-04-01"
+  },
+  "tiiuae/falcon-40b-instruct": {
+    "modelscope": "AI-ModelScope/falcon-40b-instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/falcon-40b-instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "EleutherAI/gpt-j-6b": {
+    "modelscope": "AI-ModelScope/gpt-j-6b",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/gpt-j-6b",
+    "lastVerified": "2026-04-01"
+  },
+  "EleutherAI/gpt-neox-20b": {
+    "modelscope": "AI-ModelScope/gpt-neox-20b",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/gpt-neox-20b",
+    "lastVerified": "2026-04-01"
+  },
+  "EleutherAI/pythia-6.9b": {
+    "modelscope": "AI-ModelScope/pythia-6.9b",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/pythia-6.9b",
+    "lastVerified": "2026-04-01"
+  },
+  "stabilityai/stablelm-2-1_6b": {
+    "modelscope": "AI-ModelScope/stablelm-2-1_6b",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/stablelm-2-1_6b",
+    "lastVerified": "2026-04-01"
+  },
+  "stabilityai/stablelm-2-12b": {
+    "modelscope": "AI-ModelScope/stablelm-2-12b",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/stablelm-2-12b",
+    "lastVerified": "2026-04-01"
+  },
+  "BAAI/bge-large-zh-v1.5": {
+    "modelscope": "BAAI/bge-large-zh-v1.5",
+    "modelscopeUrl": "https://www.modelscope.cn/models/BAAI/bge-large-zh-v1.5",
+    "lastVerified": "2026-04-01"
+  },
+  "BAAI/bge-m3": {
+    "modelscope": "BAAI/bge-m3",
+    "modelscopeUrl": "https://www.modelscope.cn/models/BAAI/bge-m3",
+    "lastVerified": "2026-04-01"
+  },
+  "BAAI/bge-large-en-v1.5": {
+    "modelscope": "BAAI/bge-large-en-v1.5",
+    "modelscopeUrl": "https://www.modelscope.cn/models/BAAI/bge-large-en-v1.5",
+    "lastVerified": "2026-04-01"
+  },
+  "sentence-transformers/all-MiniLM-L6-v2": {
+    "modelscope": "AI-ModelScope/all-MiniLM-L6-v2",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/all-MiniLM-L6-v2",
+    "lastVerified": "2026-04-01"
+  },
+  "microsoft/Phi-3-vision-128k-instruct": {
+    "modelscope": "LLM-Research/Phi-3-vision-128k-instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Phi-3-vision-128k-instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "hfl/chinese-llama-2-7b": {
+    "modelscope": "AI-ModelScope/chinese-llama-2-7b",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/chinese-llama-2-7b",
+    "lastVerified": "2026-04-01"
+  },
+  "baichuan-inc/Baichuan2-7B-Base": {
+    "modelscope": "baichuan-inc/Baichuan2-7B-Base",
+    "modelscopeUrl": "https://www.modelscope.cn/models/baichuan-inc/Baichuan2-7B-Base",
+    "lastVerified": "2026-04-01"
+  },
+  "baichuan-inc/Baichuan2-7B-Chat": {
+    "modelscope": "baichuan-inc/Baichuan2-7B-Chat",
+    "modelscopeUrl": "https://www.modelscope.cn/models/baichuan-inc/Baichuan2-7B-Chat",
+    "lastVerified": "2026-04-01"
+  },
+  "baichuan-inc/Baichuan2-13B-Base": {
+    "modelscope": "baichuan-inc/Baichuan2-13B-Base",
+    "modelscopeUrl": "https://www.modelscope.cn/models/baichuan-inc/Baichuan2-13B-Base",
+    "lastVerified": "2026-04-01"
+  },
+  "baichuan-inc/Baichuan2-13B-Chat": {
+    "modelscope": "baichuan-inc/Baichuan2-13B-Chat",
+    "modelscopeUrl": "https://www.modelscope.cn/models/baichuan-inc/Baichuan2-13B-Chat",
+    "lastVerified": "2026-04-01"
+  },
+  "BAAI/AquilaChat2-7B": {
+    "modelscope": "BAAI/AquilaChat2-7B",
+    "modelscopeUrl": "https://www.modelscope.cn/models/BAAI/AquilaChat2-7B",
+    "lastVerified": "2026-04-01"
+  },
+  "BAAI/Aquila-7B": {
+    "modelscope": "BAAI/Aquila-7B",
+    "modelscopeUrl": "https://www.modelscope.cn/models/BAAI/Aquila-7B",
+    "lastVerified": "2026-04-01"
+  },
+  "stabilityai/stable-code-3b": {
+    "modelscope": "AI-ModelScope/stable-code-3b",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/stable-code-3b",
+    "lastVerified": "2026-04-01"
+  },
+  "stabilityai/stable-code-instruct-3b": {
+    "modelscope": "AI-ModelScope/stable-code-instruct-3b",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/stable-code-instruct-3b",
+    "lastVerified": "2026-04-01"
+  },
+  "WizardLM/WizardLM-13B-V1.2": {
+    "modelscope": "AI-ModelScope/WizardLM-13B-V1.2",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/WizardLM-13B-V1.2",
+    "lastVerified": "2026-04-01"
+  },
+  "lmsys/vicuna-7b-v1.5": {
+    "modelscope": "AI-ModelScope/vicuna-7b-v1.5",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/vicuna-7b-v1.5",
+    "lastVerified": "2026-04-01"
+  },
+  "lmsys/vicuna-13b-v1.5": {
+    "modelscope": "AI-ModelScope/vicuna-13b-v1.5",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/vicuna-13b-v1.5",
+    "lastVerified": "2026-04-01"
+  },
+  "mosaicml/mpt-7b": {
+    "modelscope": "AI-ModelScope/mpt-7b",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/mpt-7b",
+    "lastVerified": "2026-04-01"
+  },
+  "mosaicml/mpt-7b-instruct": {
+    "modelscope": "AI-ModelScope/mpt-7b-instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/mpt-7b-instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "mosaicml/mpt-30b": {
+    "modelscope": "AI-ModelScope/mpt-30b",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/mpt-30b",
+    "lastVerified": "2026-04-01"
+  },
+  "adept/persimmon-8b-base": {
+    "modelscope": "AI-ModelScope/persimmon-8b-base",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/persimmon-8b-base",
+    "lastVerified": "2026-04-01"
+  },
+  "adept/persimmon-8b-chat": {
+    "modelscope": "AI-ModelScope/persimmon-8b-chat",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/persimmon-8b-chat",
+    "lastVerified": "2026-04-01"
+  },
+  "NousResearch/Llama-2-7b-chat-hf": {
+    "modelscope": "LLM-Research/Llama-2-7b-chat-hf",
+    "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Llama-2-7b-chat-hf",
+    "lastVerified": "2026-04-01"
+  },
+  "NousResearch/Llama-2-13b-chat-hf": {
+    "modelscope": "LLM-Research/Llama-2-13b-chat-hf",
+    "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Llama-2-13b-chat-hf",
+    "lastVerified": "2026-04-01"
+  },
+  "NousResearch/Llama-2-70b-chat-hf": {
+    "modelscope": "LLM-Research/Llama-2-70b-chat-hf",
+    "modelscopeUrl": "https://www.modelscope.cn/models/LLM-Research/Llama-2-70b-chat-hf",
+    "lastVerified": "2026-04-01"
+  },
+  "Salesforce/SFR-Embedding-Mistral": {
+    "modelscope": "AI-ModelScope/SFR-Embedding-Mistral",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/SFR-Embedding-Mistral",
+    "lastVerified": "2026-04-01"
+  },
+  "intfloat/e5-mistral-7b-instruct": {
+    "modelscope": "AI-ModelScope/e5-mistral-7b-instruct",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/e5-mistral-7b-instruct",
+    "lastVerified": "2026-04-01"
+  },
+  "intfloat/multilingual-e5-large": {
+    "modelscope": "AI-ModelScope/multilingual-e5-large",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/multilingual-e5-large",
+    "lastVerified": "2026-04-01"
+  },
+  "openai/clip-vit-large-patch14": {
+    "modelscope": "AI-ModelScope/clip-vit-large-patch14",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/clip-vit-large-patch14",
+    "lastVerified": "2026-04-01"
+  },
+  "openai/whisper-large-v3": {
+    "modelscope": "AI-ModelScope/whisper-large-v3",
+    "modelscopeUrl": "https://www.modelscope.cn/models/AI-ModelScope/whisper-large-v3",
     "lastVerified": "2026-04-01"
   }
 }

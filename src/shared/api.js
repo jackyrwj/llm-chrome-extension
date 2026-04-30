@@ -1,4 +1,44 @@
 const API = {
+  async fetchModelConfig(modelId) {
+    try {
+      if (typeof chrome !== 'undefined' && chrome.runtime) {
+        return await chrome.runtime.sendMessage({ action: 'fetchModelConfig', modelId });
+      }
+      const res = await fetch(`https://huggingface.co/api/models/${encodeURIComponent(modelId)}`);
+      const data = await res.json();
+      return { config: data.config || {} };
+    } catch (e) {
+      return { error: e.message };
+    }
+  },
+
+  async fetchHFModels(filters = {}) {
+    try {
+      if (typeof chrome !== 'undefined' && chrome.runtime) {
+        return await chrome.runtime.sendMessage({ action: 'fetchHFModels', filters });
+      }
+      const params = new URLSearchParams({
+        sort: 'downloads',
+        direction: '-1',
+        limit: String(filters.limit || 50)
+      });
+      if (filters.pipeline_tag && filters.pipeline_tag !== 'all') {
+        params.set('filter', filters.pipeline_tag);
+      }
+      if (filters.search) {
+        params.set('search', filters.search);
+      }
+      if (filters.author) {
+        params.set('author', filters.author);
+      }
+      const res = await fetch(`https://huggingface.co/api/models?${params}`);
+      const data = await res.json();
+      return { models: data };
+    } catch (e) {
+      return { error: e.message };
+    }
+  },
+
   async searchModelScope(modelId, endpoint) {
     const url = `${endpoint}?search=${encodeURIComponent(modelId)}`;
     try {
