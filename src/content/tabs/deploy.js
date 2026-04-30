@@ -91,65 +91,57 @@ const DeployTab = {
     }
 
     let html = `
-      <div class="hf-assistant-card" id="vram-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;">
-          <div class="hf-assistant-card-title" style="margin:0;">${t('vramEstimate')}</div>
-          <button type="button" class="hf-assistant-inline-action" id="vram-config-toggle">⚙️配置</button>
+      <div class=”hf-assistant-card” id=”vram-card”>
+        <div class=”hf-assistant-card-title” style=”margin-bottom:10px;”>${t('vramEstimate')}</div>
+        <div style=”margin-bottom:8px;”>
+          <label class=”hf-assistant-label” style=”margin-bottom:4px;”>硬件预设</label>
+          <select id=”vram-gpu-select” class=”hf-assistant-select” style=”margin-bottom:0;”>
+            ${GPU_PRESETS.map(g =>
+              `<optgroup label=”${g.group}”>${g.list.map(gpu =>
+                `<option value=”${gpu.vram}” data-name=”${gpu.name}”>${gpu.name} · ${gpu.vram}GB</option>`
+              ).join('')}</optgroup>`
+            ).join('')}
+            <optgroup label=”其他”><option value=”custom”>自定义...</option></optgroup>
+          </select>
         </div>
-        <div id="vram-config-form" style="display:none;border-top:1px solid #e5e7eb;padding-top:10px;margin-bottom:10px;">
-          <div style="margin-bottom:8px;">
-            <label class="hf-assistant-label" style="margin-bottom:4px;">硬件预设</label>
-            <select id="vram-gpu-select" class="hf-assistant-select" style="margin-bottom:0;">
-              ${GPU_PRESETS.map(g =>
-                `<optgroup label="${g.group}">${g.list.map(gpu =>
-                  `<option value="${gpu.vram}" data-name="${gpu.name}">${gpu.name} · ${gpu.vram}GB</option>`
-                ).join('')}</optgroup>`
-              ).join('')}
-              <optgroup label="其他"><option value="custom">自定义...</option></optgroup>
-            </select>
+        <div style=”display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;”>
+          <div>
+            <label class=”hf-assistant-label” style=”margin-bottom:2px;”>每卡显存 (GB)</label>
+            <input type=”number” id=”vram-config-gb” class=”hf-assistant-input” style=”margin-bottom:0;” min=”1” max=”9999”>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;">
-            <div>
-              <label class="hf-assistant-label" style="margin-bottom:2px;">每卡显存 (GB)</label>
-              <input type="number" id="vram-config-gb" class="hf-assistant-input" style="margin-bottom:0;" min="1" max="9999">
-            </div>
-            <div>
-              <label class="hf-assistant-label" style="margin-bottom:2px;">GPU 数量</label>
-              <input type="number" id="vram-config-gpu" class="hf-assistant-input" style="margin-bottom:0;" min="1" max="512"
-                list="gpu-count-list">
-              <datalist id="gpu-count-list">
-                <option value="1"><option value="2"><option value="4">
-                <option value="8"><option value="16"><option value="32">
-                <option value="64"><option value="128">
-              </datalist>
-            </div>
+          <div>
+            <label class=”hf-assistant-label” style=”margin-bottom:2px;”>GPU 数量</label>
+            <input type=”number” id=”vram-config-gpu” class=”hf-assistant-input” style=”margin-bottom:0;” min=”1” max=”512”
+              list=”gpu-count-list”>
+            <datalist id=”gpu-count-list”>
+              <option value=”1”><option value=”2”><option value=”4”>
+              <option value=”8”><option value=”16”><option value=”32”>
+              <option value=”64”><option value=”128”>
+            </datalist>
           </div>
-          <div id="vram-total-label" style="font-size:11px;color:#6b7280;min-height:16px;"></div>
         </div>
-        <div id="vram-display"><div style="color:#9ca3af;font-size:11px;">加载模型信息中…</div></div>
+        <div id=”vram-total-label” style=”font-size:11px;color:#6b7280;min-height:16px;margin-bottom:8px;”></div>
+        <div id=”vram-display”><div style=”color:#9ca3af;font-size:11px;”>加载模型信息中…</div></div>
       </div>
 
-      <div class="hf-assistant-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;">
-          <div class="hf-assistant-card-title" style="margin:0;">命令 · ${getToolLabel(this.currentTool)}</div>
-          <button type="button" class="hf-assistant-inline-action" id="cmd-config-toggle">⚙️配置</button>
+      <div class=”hf-assistant-card”>
+        <div class=”hf-assistant-card-title” style=”margin-bottom:8px;” id=”cmd-card-title”>命令 · ${getToolLabel(this.currentTool)}</div>
+        <div class=”hf-assistant-command” id=”command-display”>
+          <button class=”hf-assistant-command-copy” id=”copy-cmd-btn”>${t('copyCommand')}</button>
+          <button class=”hf-assistant-command-copy” id=”favorite-cmd-btn” style=”right:84px;”>${t('favoriteCommand')}</button>
+          <span id=”command-text”>加载中…</span>
         </div>
-        <div id="cmd-config-form" style="display:none;margin-bottom:10px;">
-          <div style="margin-bottom:10px;">
-            <label class="hf-assistant-label" style="margin-bottom:2px;font-size:11px;">部署工具</label>
-            <select class="hf-assistant-select" id="cmd-config-tool" style="margin-bottom:0;">
-              ${getSupportedTools().map(t => `<option value="${t}" ${t === this.currentTool ? 'selected' : ''}>${getToolLabel(t)}</option>`).join('')}
+        <div style=”margin-top:8px;color:#6b7280;font-size:11px;line-height:1.5;margin-bottom:12px;”>
+          收藏后会出现在”收藏”Tab 对应模型下面，可继续复用。
+        </div>
+        <div style=”border-top:1px solid #e5e7eb;padding-top:10px;”>
+          <div style=”margin-bottom:10px;”>
+            <label class=”hf-assistant-label” style=”margin-bottom:4px;”>部署工具</label>
+            <select class=”hf-assistant-select” id=”cmd-config-tool” style=”margin-bottom:0;”>
+              ${getSupportedTools().map(t => `<option value=”${t}” ${t === this.currentTool ? 'selected' : ''}>${getToolLabel(t)}</option>`).join('')}
             </select>
           </div>
-          <div id="cmd-config-params"></div>
-        </div>
-        <div class="hf-assistant-command" id="command-display">
-          <button class="hf-assistant-command-copy" id="copy-cmd-btn">${t('copyCommand')}</button>
-          <button class="hf-assistant-command-copy" id="favorite-cmd-btn" style="right:84px;">${t('favoriteCommand')}</button>
-          <span id="command-text">加载中…</span>
-        </div>
-        <div style="margin-top:8px;color:#6b7280;font-size:11px;line-height:1.5;">
-          收藏后会出现在“收藏”Tab 对应模型下面，可继续复用。
+          <div id=”cmd-config-params”></div>
         </div>
       </div>
 
@@ -165,15 +157,6 @@ const DeployTab = {
     this.bindEvents(container);
     this.renderParams(container);
     this.updateCommand(container);
-
-    // VRAM card inline config toggle
-    const vramToggle = container.querySelector('#vram-config-toggle');
-    const vramForm = container.querySelector('#vram-config-form');
-    vramToggle.addEventListener('click', () => {
-      const expanded = vramForm.style.display === 'none';
-      vramForm.style.display = expanded ? 'block' : 'none';
-      vramToggle.textContent = expanded ? '✕' : '⚙️配置';
-    });
 
     const gpuSelect  = container.querySelector('#vram-gpu-select');
     const vramInput  = container.querySelector('#vram-config-gb');
@@ -239,20 +222,11 @@ const DeployTab = {
     vramInput.addEventListener('change', updateTotal);
     countInput.addEventListener('change', updateTotal);
 
-    // Command card inline config toggle + tool switcher
-    const cmdToggle = container.querySelector('#cmd-config-toggle');
-    const cmdForm = container.querySelector('#cmd-config-form');
-    cmdToggle.addEventListener('click', () => {
-      const expanded = cmdForm.style.display === 'none';
-      cmdForm.style.display = expanded ? 'block' : 'none';
-      cmdToggle.textContent = expanded ? '✕' : '⚙️配置';
-    });
-
     container.querySelector('#cmd-config-tool').addEventListener('change', e => {
       this.currentTool = e.target.value;
       this.currentParams = {};
       Storage.set('defaultTool', this.currentTool);
-      container.querySelector('.hf-assistant-card-title').textContent = `命令 · ${getToolLabel(this.currentTool)}`;
+      container.querySelector('#cmd-card-title').textContent = `命令 · ${getToolLabel(this.currentTool)}`;
       this.renderParams(container);
       this.updateCommand(container);
     });
