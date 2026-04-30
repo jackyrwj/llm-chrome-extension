@@ -1,137 +1,395 @@
 const DownloadTab = {
-  rendered: false,
+  state: {
+    modelInfo: null,
+    settings: null,
+    selectedTool: 'hf_cli',
+    selectedMirror: 'hf-mirror',
+    advancedOpen: false,
+    fileFilters: {
+      safetensors: true,
+      pytorch: true,
+      gguf: true,
+      config: true,
+      tokenizer: true,
+      other: true
+    },
+    localDir: '',
+    hfToken: ''
+  },
+
+  // Tool config for rendering and command generation
+  tools: {
+    hf_cli: { id: 'hf_cli', label: t('huggingfaceCli'), desc: t('quickDownload') },
+    git_lfs: { id: 'git_lfs', label: t('gitLfs'), desc: t('fullClone') },
+    python: { id: 'python', label: t('pythonCode'), desc: t('codeIntegration') },
+    browser: { id: 'browser', label: t('browser'), desc: t('browseFiles') }
+  },
 
   async render(container, modelInfo) {
-    this.modelInfo = modelInfo;
-    const settings = await Storage.getAll();
-    const preferredMirror = settings.preferredMirror || 'hf-mirror';
+    this.state.modelInfo = modelInfo;
+    this.state.settings = await Storage.getAll();
+    this.state.selectedMirror = this.state.settings.preferredMirror || 'hf-mirror';
+    this.state.localDir = modelInfo
+      ? './' + modelInfo.modelId.replace(/\//g, '_')
+      : './model';
 
-    const mirrors = [
-      { id: 'hf-mirror', name: 'hf-mirror.com', url: 'https://hf-mirror.com' },
-      { id: 'modelscope', name: 'ModelScope', url: 'https://www.modelscope.cn' }
-    ];
+    const recommended = this.recommendTool();
+    this.state.selectedTool = recommended.tool;
 
-    let html = `
-      <div class="hf-assistant-card">
-        <div class="hf-assistant-card-title">${t('mirrorSite')}</div>
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-    `;
-
-    for (const mirror of mirrors) {
-      const isPreferred = mirror.id === preferredMirror;
-      html += `
-        <div style="display: flex; align-items: center; gap: 8px; padding: 8px;
-                    background: ${isPreferred ? '#f0fdf4' : '#f9fafb'};
-                    border-radius: 6px; cursor: pointer;"
-             class="mirror-item" data-mirror="${mirror.id}">
-          <input type="radio" name="mirror" value="${mirror.id}" ${isPreferred ? 'checked' : ''}>
-          <div style="flex: 1;">
-            <div style="font-weight: 500;">${mirror.name}</div>
-            <div style="font-size: 10px; color: #6b7280;">${mirror.url}</div>
-          </div>
-          ${isPreferred ? '<span style="color: #16a34a; font-size: 10px;">首选</span>' : ''}
-        </div>
-      `;
-    }
-
-    html += `</div></div>`;
-
-    html += `
-      <div class="hf-assistant-card">
-        <div class="hf-assistant-card-title">${t('downloadCommand')}</div>
-        <div class="hf-assistant-command" style="margin-bottom: 8px;">
-          <button class="hf-assistant-command-copy" id="copy-hf-cli">${t('copyCommand')}</button>
-          <span id="hf-cli-cmd"></span>
-        </div>
-        <div class="hf-assistant-command">
-          <button class="hf-assistant-command-copy" id="copy-git-lfs">${t('copyCommand')}</button>
-          <span id="git-lfs-cmd"></span>
-        </div>
-      </div>
-
-      <div class="hf-assistant-card">
-        <div class="hf-assistant-card-title">${t('envHint')}</div>
-        <div class="hf-assistant-command" style="background: #1e3a5f;">
-          <button class="hf-assistant-command-copy" id="copy-env">${t('copyCommand')}</button>
-          <span id="env-cmd"></span>
-        </div>
-      </div>
-    `;
-
-    if (modelInfo && modelInfo.modelscopeUrl) {
-      html += `
-        <div class="hf-assistant-card">
-          <div class="hf-assistant-card-title">魔搭下载</div>
-          <div class="hf-assistant-command">
-            <button class="hf-assistant-command-copy" id="copy-ms">${t('copyCommand')}</button>
-            <span id="ms-cmd"></span>
-          </div>
-        </div>
-      `;
-    }
-
-    container.innerHTML = html;
-    this.rendered = true;
-
-    this.selectedMirror = preferredMirror;
-    this.updateCommands(container);
+    container.innerHTML = this.buildHTML();
     this.bindEvents(container);
   },
 
+  recommendTool() {
+    const { modelInfo, settings } = this.state;
+    if (!modelInfo) return { tool: 'hf_cli', reason: t('quickDownload') };
+
+    const hasModelScope = !!(modelInfo.modelscopeUrl);
+    const preferredMirror = settings.preferredMirror || 'hf-mirror';
+
+    if (preferredMirror === 'modelscope' && hasModelScope) {
+      return { tool: 'git_lfs', reason: t('fullClone'), mirror: 'modelscope' };
+    }
+
+    return { tool: 'hf_cli', reason: t('quickDownload') };
+  },
+
+  getPlatform() {
+    const p = navigator.platform || '';
+    if (p.includes('Win')) return 'windows';
+    return 'unix';
+  },
+
+  getMirrorUrl(mirror, tool) {
+    if (mirror === 'hf-mirror') return 'https://hf-mirror.com';
+    if (mirror === 'official') return 'https://huggingface.co';
+    if (mirror === 'modelscope') {
+      if (tool === 'git_lfs') return 'https://www.modelscope.cn/models';
+      return 'https://www.modelscope.cn';
+    }
+    return 'https://huggingface.co';
+  },
+
+  buildEnvVar(mirrorUrl, platform) {
+    if (!mirrorUrl || mirrorUrl === 'https://huggingface.co') return '';
+    if (platform === 'windows') {
+      return `$env:HF_ENDPOINT="${mirrorUrl}"`;
+    }
+    return `export HF_ENDPOINT=${mirrorUrl}`;
+  },
+
+  buildCommand(tool, mirror, opts = {}) {
+    const { modelInfo, localDir, hfToken, fileFilters } = this.state;
+    if (!modelInfo) return '';
+
+    const modelId = modelInfo.modelId;
+    const platform = this.getPlatform();
+    const mirrorUrl = this.getMirrorUrl(mirror, tool);
+
+    if (tool === 'hf_cli') {
+      let cmd = '';
+      const env = this.buildEnvVar(mirrorUrl, platform);
+      if (env) cmd += env + '\n';
+      cmd += `huggingface-cli download ${modelId}`;
+      if (localDir) cmd += ` --local-dir ${localDir}`;
+
+      // File filtering
+      const includes = [];
+      if (fileFilters.safetensors) includes.push('*.safetensors');
+      if (fileFilters.pytorch) includes.push('*.bin');
+      if (fileFilters.gguf) includes.push('*.gguf');
+      if (fileFilters.config) includes.push('config.json');
+      if (fileFilters.tokenizer) includes.push('tokenizer*');
+
+      const allOn = Object.values(fileFilters).every(v => v);
+      if (!allOn && includes.length > 0) {
+        cmd += ` --include "${includes.join('" "')}"`;
+      }
+
+      if (hfToken) cmd += ` --token ${hfToken}`;
+      return cmd.trim();
+    }
+
+    if (tool === 'git_lfs') {
+      let cmd = '';
+      if (platform === 'windows') {
+        cmd += `$env:GIT_LFS_SKIP_SMUDGE="1"\n`;
+      } else {
+        cmd += `GIT_LFS_SKIP_SMUDGE=1 `;
+      }
+      const baseUrl = mirror === 'modelscope' && modelInfo.modelscopeUrl
+        ? modelInfo.modelscopeUrl.replace('/models/', '/')
+        : `${mirrorUrl}/${modelId}`;
+      cmd += `git clone ${baseUrl}.git`;
+      return cmd.trim();
+    }
+
+    if (tool === 'python') {
+      let code = 'from huggingface_hub import snapshot_download\n\n';
+      const env = this.buildEnvVar(mirrorUrl, platform);
+      if (env && platform === 'unix') {
+        code = `import os\nos.environ["HF_ENDPOINT"] = "${mirrorUrl}"\n\n` + code;
+      }
+      code += `snapshot_download(\n`;
+      code += `    repo_id="${modelId}"`;
+      if (localDir) code += `,\n    local_dir="${localDir}"`;
+      code += '\n)';
+      return code;
+    }
+
+    if (tool === 'browser') {
+      return `${mirrorUrl}/${modelId}/tree/main`;
+    }
+
+    return '';
+  },
+
+  getTip() {
+    const { selectedTool, selectedMirror, fileFilters, modelInfo, hfToken } = this.state;
+    const tips = [];
+    const platform = this.getPlatform();
+
+    if (selectedTool === 'hf_cli') tips.push(`💡 ${t('tipNeedHuggingfaceHub')}`);
+    if (selectedTool === 'git_lfs') tips.push(`💡 ${t('tipNeedGitLfs')}`);
+    if (selectedTool === 'python') tips.push(`💡 ${t('tipNeedHuggingfaceHub')}`);
+    if (selectedMirror === 'hf-mirror') tips.push(`🌐 ${t('tipMirrorCommunity')}`);
+    if (selectedMirror === 'modelscope') tips.push(`🌐 ${t('tipModelScopeDiff')}`);
+    if (modelInfo && modelInfo.isGated && !hfToken) tips.push(`⚠️ ${t('tipNeedToken')}`);
+
+    const allOn = Object.values(fileFilters).every(v => v);
+    if (!allOn) tips.push(`📁 ${t('tipFileFilter')}`);
+    if (platform === 'windows') tips.push(`🖥️ ${t('tipWindowsPowerShell')}`);
+
+    return tips.join('\n');
+  },
+
+  getModelSizeText() {
+    const { modelInfo } = this.state;
+    if (!modelInfo || !modelInfo.files || modelInfo.files.length === 0) {
+      return t('unknownSize');
+    }
+    const totalBytes = modelInfo.files.reduce((sum, f) => sum + (f.size || 0), 0);
+    if (totalBytes === 0) return t('unknownSize');
+    if (totalBytes >= 1024 * 1024 * 1024) {
+      return `~${(totalBytes / (1024 * 1024 * 1024)).toFixed(1)}GB`;
+    }
+    if (totalBytes >= 1024 * 1024) {
+      return `~${(totalBytes / (1024 * 1024)).toFixed(0)}MB`;
+    }
+    return `~${(totalBytes / 1024).toFixed(0)}KB`;
+  },
+
+  buildHTML() {
+    const { modelInfo, selectedTool, selectedMirror, advancedOpen, fileFilters, localDir, hfToken } = this.state;
+    const platform = this.getPlatform();
+
+    let html = '';
+
+    // ① Model Info Bar
+    if (modelInfo) {
+      html += `<div class="hf-download-model-info">
+          <strong>${modelInfo.modelId}</strong> · ${this.getModelSizeText()}
+        </div>`;
+    }
+
+    // ② Recommended Solution Card
+    const recommended = this.recommendTool();
+    const recCmd = this.buildCommand(recommended.tool, recommended.mirror || selectedMirror, { isRecommended: true });
+    html += `<div class="hf-download-recommend">
+        <div class="hf-download-recommend-title">⭐ ${t('recommendedSolution')}</div>
+        <div class="hf-assistant-command" style="position:relative;padding-bottom:36px;margin:0;">
+          <span style="white-space:pre-wrap;word-break:break-all;">${this.escapeHtml(recCmd)}</span>
+          <div style="position:absolute;bottom:6px;right:6px;display:flex;gap:4px;">
+            <button class="hf-assistant-command-copy" data-action="copy-recommended">${t('copy')}</button>
+          </div>
+        </div>
+        <div class="hf-download-recommend-meta">
+          <div>💡 ${t('recommendedFor')}: ${recommended.reason}</div>
+          <div>⚠️ ${t('prerequisite')}: ${t('tipNeedHuggingfaceHub')}</div>
+        </div>
+      </div>`;
+
+    // ③ Download Tool Selection
+    html += `<div class="hf-download-segmented">`;
+    Object.values(this.tools).forEach(tool => {
+      const active = selectedTool === tool.id ? 'active' : '';
+      html += `<button class="hf-download-segment ${active}" data-tool="${tool.id}" title="${tool.desc}">${tool.label}</button>`;
+    });
+    html += `</div>`;
+
+    // ④ Network Settings
+    html += `<div class="hf-download-mirror-row">
+        <span class="hf-assistant-label">${t('networkSettings')}</span>
+        <select class="hf-assistant-select" id="dl-mirror-select">
+          <option value="hf-mirror" ${selectedMirror === 'hf-mirror' ? 'selected' : ''}>${t('mirrorHfMirror')}</option>
+          <option value="official" ${selectedMirror === 'official' ? 'selected' : ''}>${t('official')}</option>
+          <option value="modelscope" ${selectedMirror === 'modelscope' ? 'selected' : ''}>${t('modelscope')}</option>
+        </select>
+      </div>`;
+
+    // ModelScope warning
+    if (selectedMirror === 'modelscope' && modelInfo && !modelInfo.modelscopeUrl) {
+      html += `<div class="hf-download-tip warning">⚠️ ${t('modelscopeNotAvailable')}。${t('modelscopeFallback')}。</div>`;
+    }
+
+    // ⑤ Advanced Options
+    html += `<button class="hf-download-advanced-toggle" id="dl-advanced-toggle">
+        <span>${advancedOpen ? '▲' : '▼'}</span> ${t('advancedOptions')}
+      </button>
+      <div class="hf-download-advanced-content ${advancedOpen ? 'open' : ''}" id="dl-advanced-content">`;
+
+    // File Filtering
+    const filtersDisabled = selectedTool === 'git_lfs';
+    html += `<div class="hf-assistant-param-group">${t('fileFiltering')}</div>`;
+    if (filtersDisabled) {
+      html += `<div class="hf-download-filter-note">${t('gitLfsNoFilter')}</div>`;
+    }
+    html += `<div class="hf-download-file-filters">`;
+    const filterItems = [
+      { key: 'safetensors', label: '.safetensors' },
+      { key: 'pytorch', label: '.bin (pytorch)' },
+      { key: 'config', label: 'config.json' },
+      { key: 'tokenizer', label: 'tokenizer' },
+      { key: 'gguf', label: '.gguf' },
+      { key: 'other', label: t('allFiles') }
+    ];
+    filterItems.forEach(item => {
+      const checked = fileFilters[item.key] ? 'checked' : '';
+      const disabled = filtersDisabled ? 'disabled' : '';
+      html += `<label class="hf-download-file-filter ${disabled}">
+          <input type="checkbox" data-filter="${item.key}" ${checked} ${filtersDisabled ? 'disabled' : ''}>
+          <span>${item.label}</span>
+        </label>`;
+    });
+    html += `</div>`;
+
+    // Local Directory
+    html += `<div class="hf-assistant-label">${t('localDirectory')}</div>
+        <input type="text" class="hf-assistant-input" id="dl-local-dir" value="${this.escapeHtml(localDir)}">`;
+
+    // Authentication (for gated models)
+    if (modelInfo && modelInfo.isGated) {
+      html += `<div class="hf-assistant-param-group">${t('authentication')}</div>
+          <div class="hf-assistant-label">${t('gatedModelTokenHint')}</div>
+          <input type="password" class="hf-assistant-input" id="dl-hf-token" placeholder="${t('howToUseToken')}" value="${this.escapeHtml(hfToken)}">`;
+    }
+
+    html += `</div>`; // end advanced content
+
+    // ⑥ Generated Command Block
+    const customCmd = this.buildCommand(selectedTool, selectedMirror);
+    html += `<div class="hf-assistant-card-title">${t('generatedCommand')}</div>
+        <div class="hf-download-command-block">
+          <span id="dl-custom-cmd">${this.escapeHtml(customCmd)}</span>
+          <div class="hf-download-command-actions">
+            <button data-action="copy-custom">📋 ${t('copy')}</button>
+            <button data-action="open-terminal">🖥️ ${t('openInTerminal')}</button>
+          </div>
+        </div>`;
+
+    // ⑦ Dynamic Tips
+    const tipText = this.getTip();
+    if (tipText) {
+      html += `<div class="hf-download-tip">${this.escapeHtml(tipText).replace(/\n/g, '<br>')}</div>`;
+    }
+
+    return html;
+  },
+
+  escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  },
+
   bindEvents(container) {
-    container.querySelectorAll('.mirror-item').forEach(el => {
-      el.addEventListener('click', () => {
-        this.selectedMirror = el.dataset.mirror;
-        container.querySelectorAll('input[name="mirror"]').forEach(r => {
-          r.checked = r.value === this.selectedMirror;
-        });
-        this.updateCommands(container);
+    // Tool segments
+    container.querySelectorAll('.hf-download-segment').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.state.selectedTool = btn.dataset.tool;
+        this.refreshUI(container);
       });
     });
 
-    container.querySelector('#copy-hf-cli').addEventListener('click', () => {
-      const cmd = container.querySelector('#hf-cli-cmd').textContent;
-      navigator.clipboard.writeText(cmd).then(() => Sidebar.showToast(t('copied')));
+    // Mirror select
+    const mirrorSelect = container.querySelector('#dl-mirror-select');
+    if (mirrorSelect) {
+      mirrorSelect.addEventListener('change', (e) => {
+        this.state.selectedMirror = e.target.value;
+        this.refreshUI(container);
+      });
+    }
+
+    // Advanced toggle
+    const advToggle = container.querySelector('#dl-advanced-toggle');
+    if (advToggle) {
+      advToggle.addEventListener('click', () => {
+        this.state.advancedOpen = !this.state.advancedOpen;
+        this.refreshUI(container);
+      });
+    }
+
+    // File filters
+    container.querySelectorAll('[data-filter]').forEach(cb => {
+      cb.addEventListener('change', (e) => {
+        this.state.fileFilters[e.target.dataset.filter] = e.target.checked;
+        this.refreshUI(container);
+      });
     });
 
-    container.querySelector('#copy-git-lfs').addEventListener('click', () => {
-      const cmd = container.querySelector('#git-lfs-cmd').textContent;
-      navigator.clipboard.writeText(cmd).then(() => Sidebar.showToast(t('copied')));
-    });
+    // Local dir
+    const dirInput = container.querySelector('#dl-local-dir');
+    if (dirInput) {
+      dirInput.addEventListener('change', (e) => {
+        this.state.localDir = e.target.value;
+        this.refreshUI(container);
+      });
+    }
 
-    container.querySelector('#copy-env').addEventListener('click', () => {
-      const cmd = container.querySelector('#env-cmd').textContent;
-      navigator.clipboard.writeText(cmd).then(() => Sidebar.showToast(t('copied')));
-    });
+    // HF Token
+    const tokenInput = container.querySelector('#dl-hf-token');
+    if (tokenInput) {
+      tokenInput.addEventListener('change', (e) => {
+        this.state.hfToken = e.target.value;
+        this.refreshUI(container);
+      });
+    }
 
-    const msCopy = container.querySelector('#copy-ms');
-    if (msCopy) {
-      msCopy.addEventListener('click', () => {
-        const cmd = container.querySelector('#ms-cmd').textContent;
+    // Copy recommended
+    const copyRec = container.querySelector('[data-action="copy-recommended"]');
+    if (copyRec) {
+      copyRec.addEventListener('click', () => {
+        const recommended = this.recommendTool();
+        const cmd = this.buildCommand(recommended.tool, recommended.mirror || this.state.selectedMirror);
         navigator.clipboard.writeText(cmd).then(() => Sidebar.showToast(t('copied')));
+      });
+    }
+
+    // Copy custom
+    const copyCustom = container.querySelector('[data-action="copy-custom"]');
+    if (copyCustom) {
+      copyCustom.addEventListener('click', () => {
+        const cmd = container.querySelector('#dl-custom-cmd').textContent;
+        navigator.clipboard.writeText(cmd).then(() => Sidebar.showToast(t('copied')));
+      });
+    }
+
+    // Open in terminal (one-liner)
+    const openTerm = container.querySelector('[data-action="open-terminal"]');
+    if (openTerm) {
+      openTerm.addEventListener('click', () => {
+        const cmd = this.buildCommand(this.state.selectedTool, this.state.selectedMirror);
+        const oneLiner = cmd.replace(/\n/g, ' && ');
+        navigator.clipboard.writeText(oneLiner).then(() => Sidebar.showToast(t('copied')));
       });
     }
   },
 
-  updateCommands(container) {
-    if (!this.modelInfo) return;
-
-    const modelId = this.modelInfo.modelId;
-    const mirrorUrl = this.selectedMirror === 'hf-mirror' ? 'https://hf-mirror.com' : 'https://huggingface.co';
-
-    container.querySelector('#hf-cli-cmd').textContent =
-      `HF_ENDPOINT=${mirrorUrl} huggingface-cli download ${modelId} --local-dir ./${modelId.replace('/', '_')}`;
-
-    container.querySelector('#git-lfs-cmd').textContent =
-      `GIT_LFS_SKIP_SMUDGE=1 git clone ${mirrorUrl}/${modelId}.git`;
-
-    container.querySelector('#env-cmd').textContent =
-      `export HF_ENDPOINT=${mirrorUrl}`;
-
-    const msCmd = container.querySelector('#ms-cmd');
-    if (msCmd && this.modelInfo.modelscopeUrl) {
-      const msId = this.modelInfo.modelscopeUrl.replace('https://www.modelscope.cn/models/', '');
-      msCmd.textContent = `git lfs clone https://www.modelscope.cn/${msId}.git`;
-    }
+  refreshUI(container) {
+    // Re-render only the dynamic parts to avoid full DOM rebuild
+    // For simplicity, we re-render the whole tab
+    container.innerHTML = this.buildHTML();
+    this.bindEvents(container);
   }
 };
