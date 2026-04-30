@@ -363,3 +363,231 @@
 .hf-assistant-content::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
 }
+
+/* ===== Download Tab: Recommended Card ===== */
+.hf-download-recommend {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #2563eb;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.hf-download-recommend-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: #1e40af;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hf-download-recommend-meta {
+  font-size: 11px;
+  color: #3b82f6;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #bfdbfe;
+}
+
+.hf-download-recommend-meta div {
+  margin-bottom: 3px;
+}
+
+/* ===== Download Tab: Segmented Control ===== */
+.hf-download-segmented {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.hf-download-segment {
+  flex: 1;
+  padding: 6px 4px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.hf-download-segment:hover {
+  background: #f9fafb;
+  color: #374151;
+}
+
+.hf-download-segment.active {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.hf-download-segment[data-disabled="true"] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ===== Download Tab: Collapsible Panel ===== */
+.hf-download-advanced-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+.hf-download-advanced-toggle:hover {
+  color: #2563eb;
+}
+
+.hf-download-advanced-content {
+  display: none;
+  padding: 8px 0 4px;
+}
+
+.hf-download-advanced-content.open {
+  display: block;
+}
+
+/* ===== Download Tab: File Filter Grid ===== */
+.hf-download-file-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+.hf-download-file-filter {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 6px;
+  background: #f9fafb;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.hf-download-file-filter.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hf-download-file-filter input {
+  margin: 0;
+  cursor: pointer;
+}
+
+.hf-download-filter-note {
+  font-size: 11px;
+  color: #ca8a04;
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  background: #fefce8;
+  border-radius: 4px;
+}
+
+/* ===== Download Tab: Model Info Bar ===== */
+.hf-download-model-info {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.hf-download-model-info strong {
+  color: #374151;
+}
+
+/* ===== Download Tab: Command Block (copy button fix) ===== */
+.hf-download-command-block {
+  background: #1f2937;
+  border-radius: 8px;
+  padding: 12px 12px 44px 12px;
+  position: relative;
+  word-break: break-all;
+  white-space: pre-wrap;
+  font-family: "SF Mono", Monaco, "Cascadia Code", monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #e5e7eb;
+  margin-bottom: 8px;
+}
+
+.hf-download-command-actions {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  display: flex;
+  gap: 6px;
+}
+
+.hf-download-command-actions button {
+  background: #374151;
+  color: #ffffff;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.hf-download-command-actions button:hover {
+  background: #4b5563;
+}
+
+/* ===== Download Tab: Tips ===== */
+.hf-download-tip {
+  font-size: 11px;
+  color: #6b7280;
+  padding: 8px 10px;
+  background: #f9fafb;
+  border-radius: 6px;
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+.hf-download-tip.warning {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+.hf-download-tip code {
+  background: #e5e7eb;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-family: "SF Mono", Monaco, monospace;
+}
+
+/* ===== Download Tab: Mirror Select ===== */
+.hf-download-mirror-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.hf-download-mirror-row .hf-assistant-label {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.hf-download-mirror-row .hf-assistant-select {
+  margin: 0;
+  flex: 1;
+}
