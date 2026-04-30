@@ -118,7 +118,7 @@ const DownloadTab = {
         cmd += `GIT_LFS_SKIP_SMUDGE=1 `;
       }
       const baseUrl = mirror === 'modelscope' && modelInfo.modelscopeUrl
-        ? modelInfo.modelscopeUrl.replace('/models/', '/')
+        ? modelInfo.modelscopeUrl
         : `${mirrorUrl}/${modelId}`;
       cmd += `git clone ${baseUrl}.git`;
       return cmd.trim();
