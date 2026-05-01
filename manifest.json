@@ -28,6 +28,12 @@
       "run_at": "document_idle"
     }
   ],
+  "web_accessible_resources": [
+    {
+      "resources": ["src/content/sidebar.css", "src/assets/wechat-qr.png"],
+      "matches": ["https://huggingface.co/*", "https://www.modelscope.cn/*"]
+    }
+  ],
   "background": {
     "service_worker": "src/background/background.js"
   },

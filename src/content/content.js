@@ -12,6 +12,8 @@
 
   // Store platform info globally
   window.__HF_ASSISTANT_PLATFORM__ = isHF ? 'hf' : 'modelscope';
+  let refreshTimer = null;
+  let refreshAttempts = 0;
 
   function isModelDetailPage() {
     const pathParts = window.location.pathname.split('/').filter(Boolean);
@@ -29,46 +31,47 @@
     return false;
   }
 
+  function populateModelInfo() {
+    if (!Sidebar.container) return false;
+
+    const modelInfo = PageScraper.extractModelInfo();
+    if (modelInfo) {
+      modelInfo.platform = isHF ? 'hf' : 'modelscope';
+      modelInfo.files = PageScraper.extractFileList();
+      Sidebar.setModelInfo(modelInfo);
+      Sidebar.updatePageMargin(Sidebar.currentWidth || 360);
+      refreshAttempts = 0;
+      return true;
+    }
+
+    // Some SPA renders land after our content script. Retry a few times without blocking the page.
+    if (refreshAttempts < 4) {
+      refreshAttempts += 1;
+      scheduleRefresh(250 * refreshAttempts);
+    }
+    return false;
+  }
+
+  function scheduleRefresh(delay = 0) {
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(() => {
+      populateModelInfo();
+    }, delay);
+  }
+
   async function init() {
     try {
       if (document.readyState === 'loading') {
         await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
       }
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (!isModelDetailPage()) return;
 
       await Sidebar.init();
-
-      if (isModelDetailPage()) {
-        const modelInfo = PageScraper.extractModelInfo();
-        if (modelInfo) {
-          modelInfo.platform = isHF ? 'hf' : 'modelscope';
-          modelInfo.files = PageScraper.extractFileList();
-          Sidebar.setModelInfo(modelInfo);
-        }
-        adjustPageLayout();
-      } else {
-        Sidebar.setModelInfo(null);
-      }
+      scheduleRefresh(0);
 
     } catch (err) {
       console.error('HF Model Assistant init error:', err);
-    }
-  }
-
-  function adjustPageLayout() {
-    if (!isHF) return;
-    const main = document.querySelector('main, .container, #main-content');
-    if (main) {
-      main.style.marginRight = '360px';
-    }
-  }
-
-  function resetPageLayout() {
-    if (!isHF) return;
-    const main = document.querySelector('main, .container, #main-content');
-    if (main) {
-      main.style.marginRight = '';
     }
   }
 
@@ -77,20 +80,18 @@
     const url = location.href;
     if (url !== lastUrl) {
       lastUrl = url;
-      setTimeout(() => {
-        if (isModelDetailPage()) {
-          const modelInfo = PageScraper.extractModelInfo();
-          if (modelInfo) {
-            modelInfo.platform = isHF ? 'hf' : 'modelscope';
-            modelInfo.files = PageScraper.extractFileList();
-            Sidebar.setModelInfo(modelInfo);
-          }
-          adjustPageLayout();
-        } else {
-          Sidebar.setModelInfo(null);
-          resetPageLayout();
-        }
-      }, 1500);
+      refreshAttempts = 0;
+
+      const onDetail = isModelDetailPage();
+      const sidebarExists = !!Sidebar.container;
+
+      if (onDetail && !sidebarExists) {
+        Sidebar.init().then(() => scheduleRefresh(0));
+      } else if (!onDetail && sidebarExists) {
+        Sidebar.destroy();
+      } else if (onDetail && sidebarExists) {
+        scheduleRefresh(300);
+      }
     }
   }).observe(document, { subtree: true, childList: true });
 

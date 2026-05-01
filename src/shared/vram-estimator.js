@@ -119,6 +119,9 @@ function estimateVRAM(modelInfo, options = {}) {
   else if (vramGB <= userVramGB * 1.1) status = 'warning';
   else status = 'insufficient';
 
+  const weightGB = Math.round((params * bytesPerParam / 1e9) * 1.2 * 10) / 10;
+  const kvCacheGB = Math.round((vramGB - (params * bytesPerParam / 1e9) * 1.2) * 10) / 10;
+
   return {
     vramGB: Math.round(vramGB * 10) / 10,
     status,
@@ -128,7 +131,9 @@ function estimateVRAM(modelInfo, options = {}) {
     configLoaded: !!(cfg.num_hidden_layers || cfg.hidden_size || cfg.num_key_value_heads),
     numLayers,
     hiddenSize,
-    numKVHeads
+    numKVHeads,
+    weightGB,
+    kvCacheGB: options.tool === 'vllm' || options.tool === 'sglang' || options.tool === 'tgi' ? kvCacheGB : 0,
   };
 }
 

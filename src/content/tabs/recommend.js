@@ -22,33 +22,66 @@ const RecommendTab = {
     }
 
     const profile = this.buildModelProfile(modelInfo, settings.recommendTaskType);
-    const currentParamsText = profile.paramsB ? `${profile.paramsB}B` : '未知规模';
-    const familyText = profile.familyLabel || profile.primaryToken || modelInfo.author || '当前模型';
+    const currentParamsText = profile.paramsB ? `${profile.paramsB}B` : '未知';
     const currentCategory = settings.recommendTaskType || profile.category || 'all';
+    const currentEstimate = profile.paramsB ? estimateVRAM({
+      modelId: modelInfo.modelId,
+      parameterCount: `${profile.paramsB}B`
+    }, {
+      precision: settings.recommendPrecision || 'fp16',
+      userVramGB: (settings.vramGB || 24) * (settings.gpuCount || 1)
+    }) : { status: 'unknown', vramGB: null };
+    const statusColor = currentEstimate.status === 'ok' ? '#16a34a' : currentEstimate.status === 'warning' ? '#ca8a04' : currentEstimate.status === 'unknown' ? '#6b7280' : '#dc2626';
+    const statusBg = currentEstimate.status === 'ok' ? '#dcfce7' : currentEstimate.status === 'warning' ? '#fef9c3' : currentEstimate.status === 'unknown' ? '#f3f4f6' : '#fee2e2';
+    const statusText = currentEstimate.status === 'ok' ? '✅ 稳妥' : currentEstimate.status === 'warning' ? '⚠️ 较紧' : currentEstimate.status === 'unknown' ? '❔ 未知' : '❌ 吃显存';
 
     container.innerHTML = `
       <div class="hf-assistant-card">
-        <div class="hf-assistant-card-title">推荐策略</div>
-        <div style="font-size: 12px; color: #374151; line-height: 1.7;">
-          <div><strong>当前模型：</strong>${this.escapeHtml(modelInfo.modelId)}</div>
-          <div><strong>模型家族：</strong>${this.escapeHtml(familyText)}</div>
-          <div><strong>当前规模：</strong>${this.escapeHtml(currentParamsText)}</div>
-          <div><strong>模型类别：</strong>${this.escapeHtml(this.getCategoryLabel(profile.category))}</div>
-          <div><strong>推荐筛选：</strong>${this.escapeHtml(this.getCategoryLabel(currentCategory))}</div>
+        <div class="hf-assistant-card-title">当前模型</div>
+        <div style="padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; background: #ffffff; margin-bottom: 10px;">
+          <div style="display: flex; justify-content: space-between; gap: 8px; align-items: flex-start;">
+            <a href="https://huggingface.co/${this.escapeHtml(modelInfo.modelId)}" target="_blank"
+               class="hf-assistant-link" style="font-size: 12px; font-weight: 600; word-break: break-all; flex: 1;">
+              ${this.escapeHtml(modelInfo.modelId)}
+            </a>
+            <span style="background: ${statusBg}; color: ${statusColor}; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; white-space: nowrap;">
+              ${statusText}
+            </span>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
+            <span style="background: #f3f4f6; color: #374151; padding: 2px 8px; border-radius: 999px; font-size: 10px;">📊 ${currentParamsText}</span>
+            <span style="background: #f3f4f6; color: #374151; padding: 2px 8px; border-radius: 999px; font-size: 10px;">🏷️ ${this.escapeHtml(this.getCategoryLabel(currentCategory))}</span>
+            ${modelInfo.downloads ? `<span style="background: #f3f4f6; color: #374151; padding: 2px 8px; border-radius: 999px; font-size: 10px;">⬇️ ${this.formatDownloads(modelInfo.downloads)}</span>` : ''}
+          </div>
         </div>
-        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
-          <span style="background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 500;">显存 ${settings.vramGB} GB</span>
-          <span style="background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 500;">GPU x${settings.gpuCount}</span>
-          <span style="background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 500;">精度 ${settings.recommendPrecision.toUpperCase()}</span>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div>
+            <label style="font-size: 11px; color: #6b7280; margin-bottom: 4px; display: block;">模型类别</label>
+            <select class="hf-assistant-select" id="recommend-task-type" style="margin-bottom: 0; font-size: 11px;">
+              ${this.renderCategoryOptions(currentCategory)}
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 11px; color: #6b7280; margin-bottom: 4px; display: block;">推荐精度</label>
+            <select class="hf-assistant-select" id="recommend-precision" style="margin-bottom: 0; font-size: 11px;">
+              ${['fp16', 'int8', 'int4', 'q4'].map(p => `<option value="${p}" ${settings.recommendPrecision === p ? 'selected' : ''}>${p.toUpperCase()}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 11px; color: #6b7280; margin-bottom: 4px; display: block;">显存大小（GB）</label>
+            <select class="hf-assistant-select" id="recommend-vram" style="margin-bottom: 0; font-size: 11px;">
+              ${[4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 64, 80, 96, 128].map(v => `<option value="${v}" ${settings.vramGB === v ? 'selected' : ''}>${v} GB</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 11px; color: #6b7280; margin-bottom: 4px; display: block;">GPU 数量</label>
+            <select class="hf-assistant-select" id="recommend-gpu-count" style="margin-bottom: 0; font-size: 11px;">
+              ${[1, 2, 4, 8, 16, 32, 64].map(n => `<option value="${n}" ${settings.gpuCount === n ? 'selected' : ''}>${n} 张</option>`).join('')}
+            </select>
+          </div>
         </div>
-        <div style="margin-top: 10px;">
-          <label style="font-size: 11px; color: #6b7280; margin-bottom: 4px; display: block;">模型类别</label>
-          <select class="hf-assistant-select" id="recommend-task-type" style="margin-bottom: 0;">
-            ${this.renderCategoryOptions(currentCategory)}
-          </select>
-        </div>
-        <div style="margin-top: 10px; font-size: 11px; color: #6b7280; line-height: 1.6;">
-          先把 Hugging Face 的原始任务与标签归并成业务类别，再从同作者和同家族中找同类模型，最后按你的显存分组推荐。
+        <div id="vram-note" style="margin-top: 8px; font-size: 11px; color: #9ca3af; line-height: 1.6;">
+          数据来源：Hugging Face 模型列表，按作者和家族名搜索，按总显存（${settings.vramGB * settings.gpuCount} GB）匹配。
         </div>
       </div>
 
@@ -63,6 +96,23 @@ const RecommendTab = {
 
     container.querySelector('#recommend-task-type').addEventListener('change', async (e) => {
       await Storage.set('recommendTaskType', e.target.value);
+      this.doRecommend(container);
+    });
+
+    container.querySelector('#recommend-precision').addEventListener('change', async (e) => {
+      await Storage.set('recommendPrecision', e.target.value);
+      this.doRecommend(container);
+    });
+
+    container.querySelector('#recommend-vram').addEventListener('change', async (e) => {
+      await Storage.set('vramGB', Number(e.target.value));
+      this.updateVramNote(container);
+      this.doRecommend(container);
+    });
+
+    container.querySelector('#recommend-gpu-count').addEventListener('change', async (e) => {
+      await Storage.set('gpuCount', Number(e.target.value));
+      this.updateVramNote(container);
       this.doRecommend(container);
     });
 
@@ -321,9 +371,8 @@ const RecommendTab = {
       parameterCount: this.findParameterCount(tags, id),
       tags
     });
-    if (!params) return null;
 
-    const paramsB = Math.round(params / 1e8) / 10;
+    const paramsB = params ? Math.round(params / 1e8) / 10 : null;
     const candidateTokens = this.extractInformativeTokens([id, ...tags]);
     const familyOverlap = candidateTokens.filter(token => profile.tokens.includes(token)).length;
     const authorMatch = this.modelInfo.author && id.startsWith(`${this.modelInfo.author}/`);
@@ -333,20 +382,20 @@ const RecommendTab = {
       tags
     }, pipelineTag);
     const categoryMatch = profile.category === 'all' || !profile.category || candidateCategory === profile.category;
-    const estimate = estimateVRAM({
+    const estimate = paramsB ? estimateVRAM({
       modelId: id,
       parameterCount: `${paramsB}B`
     }, {
       precision: settings.recommendPrecision || 'fp16',
       userVramGB: (settings.vramGB || 24) * (settings.gpuCount || 1)
-    });
+    }) : { status: 'unknown', vramGB: null };
 
     if (!authorMatch && familyOverlap === 0) return null;
     if (!categoryMatch && profile.category !== 'all') return null;
 
-    const sizeDelta = profile.params ? ((params - profile.params) / profile.params) : 0;
-    const closeness = profile.params ? Math.max(0, 1 - Math.min(Math.abs(sizeDelta), 1.5)) : 0.4;
-    const compatibilityScore = estimate.status === 'ok' ? 1 : estimate.status === 'warning' ? 0.55 : 0.1;
+    const sizeDelta = (profile.params && params) ? ((params - profile.params) / profile.params) : 0;
+    const closeness = (profile.params && params) ? Math.max(0, 1 - Math.min(Math.abs(sizeDelta), 1.5)) : 0.3;
+    const compatibilityScore = estimate.status === 'ok' ? 1 : estimate.status === 'warning' ? 0.55 : estimate.status === 'unknown' ? 0.4 : 0.1;
     const downloadScore = Math.min(Math.log10((model.downloads || 0) + 10) / 6, 1);
     const familyScore = Math.min(familyOverlap / Math.max(profile.tokens.length || 1, 1), 1);
     const totalScore = (
@@ -363,7 +412,7 @@ const RecommendTab = {
       pipelineTag,
       downloads: model.downloads || 0,
       paramsB,
-      parameterCount: `${paramsB}B`,
+      parameterCount: paramsB ? `${paramsB}B` : '未知',
       estimate,
       status: estimate.status,
       category: candidateCategory,
@@ -404,7 +453,9 @@ const RecommendTab = {
       ? `按 ${context.precision.toUpperCase()} 估算约 ${context.estimate.vramGB} GB，您的机器可稳妥运行`
       : context.estimate.status === 'warning'
         ? `按 ${context.precision.toUpperCase()} 估算约 ${context.estimate.vramGB} GB，能跑但比较吃紧`
-        : `按 ${context.precision.toUpperCase()} 估算约 ${context.estimate.vramGB} GB，显存压力较大`;
+        : context.estimate.status === 'unknown'
+          ? '规模未知，无法估算显存需求'
+          : `按 ${context.precision.toUpperCase()} 估算约 ${context.estimate.vramGB} GB，显存压力较大`;
 
     return `${reasonBits.join(' · ')}。${ability}。`;
   },
@@ -417,6 +468,10 @@ const RecommendTab = {
     };
 
     for (const candidate of candidates.sort((a, b) => b.score - a.score || b.downloads - a.downloads)) {
+      if (!candidate.paramsB) {
+        if (groups.similar.length < 5) groups.similar.push(candidate);
+        continue;
+      }
       if (profile.paramsB && candidate.paramsB <= profile.paramsB * 0.8) {
         if (groups.smaller.length < 4) groups.smaller.push(candidate);
         continue;
@@ -467,9 +522,9 @@ const RecommendTab = {
   },
 
   renderCandidate(item) {
-    const statusColor = item.status === 'ok' ? '#16a34a' : item.status === 'warning' ? '#ca8a04' : '#dc2626';
-    const statusBg = item.status === 'ok' ? '#dcfce7' : item.status === 'warning' ? '#fef9c3' : '#fee2e2';
-    const statusText = item.status === 'ok' ? '✅ 稳妥' : item.status === 'warning' ? '⚠️ 较紧' : '❌ 吃显存';
+    const statusColor = item.status === 'ok' ? '#16a34a' : item.status === 'warning' ? '#ca8a04' : item.status === 'unknown' ? '#6b7280' : '#dc2626';
+    const statusBg = item.status === 'ok' ? '#dcfce7' : item.status === 'warning' ? '#fef9c3' : item.status === 'unknown' ? '#f3f4f6' : '#fee2e2';
+    const statusText = item.status === 'ok' ? '✅ 稳妥' : item.status === 'warning' ? '⚠️ 较紧' : item.status === 'unknown' ? '❔ 未知' : '❌ 吃显存';
 
     return `
       <div style="padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; background: #ffffff;">
@@ -533,6 +588,14 @@ const RecommendTab = {
     return token
       .replace(/-/g, ' ')
       .replace(/\b\w/g, char => char.toUpperCase());
+  },
+
+  async updateVramNote(container) {
+    const settings = await Storage.getAll();
+    const note = container.querySelector('#vram-note');
+    if (note) {
+      note.textContent = `数据来源：Hugging Face 模型列表，按作者和家族名搜索，按总显存（${settings.vramGB * settings.gpuCount} GB）匹配。`;
+    }
   },
 
   formatDownloads(num) {

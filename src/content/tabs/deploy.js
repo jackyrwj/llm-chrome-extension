@@ -91,57 +91,76 @@ const DeployTab = {
     }
 
     let html = `
-      <div class=”hf-assistant-card” id=”vram-card”>
-        <div class=”hf-assistant-card-title” style=”margin-bottom:10px;”>${t('vramEstimate')}</div>
-        <div style=”margin-bottom:8px;”>
-          <label class=”hf-assistant-label” style=”margin-bottom:4px;”>硬件预设</label>
-          <select id=”vram-gpu-select” class=”hf-assistant-select” style=”margin-bottom:0;”>
+      <div class="hf-assistant-card" id="vram-card">
+        <div class="hf-assistant-card-title" style="margin-bottom:10px;">${t('vramEstimate')}</div>
+        <div style="margin-bottom:8px;">
+          <label class="hf-assistant-label" style="margin-bottom:4px;">硬件预设</label>
+          <select id="vram-gpu-select" class="hf-assistant-select" style="margin-bottom:0;">
             ${GPU_PRESETS.map(g =>
-              `<optgroup label=”${g.group}”>${g.list.map(gpu =>
-                `<option value=”${gpu.vram}” data-name=”${gpu.name}”>${gpu.name} · ${gpu.vram}GB</option>`
+              `<optgroup label="${g.group}">${g.list.map(gpu =>
+                `<option value="${gpu.vram}" data-name="${gpu.name}">${gpu.name} · ${gpu.vram}GB</option>`
               ).join('')}</optgroup>`
             ).join('')}
-            <optgroup label=”其他”><option value=”custom”>自定义...</option></optgroup>
+            <optgroup label="其他"><option value="custom">自定义...</option></optgroup>
           </select>
         </div>
-        <div style=”display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;”>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;">
           <div>
-            <label class=”hf-assistant-label” style=”margin-bottom:2px;”>每卡显存 (GB)</label>
-            <input type=”number” id=”vram-config-gb” class=”hf-assistant-input” style=”margin-bottom:0;” min=”1” max=”9999”>
+            <label class="hf-assistant-label" style="margin-bottom:2px;">每卡显存 (GB)</label>
+            <input type="number" id="vram-config-gb" class="hf-assistant-input" style="margin-bottom:0;" min="1" max="9999">
           </div>
           <div>
-            <label class=”hf-assistant-label” style=”margin-bottom:2px;”>GPU 数量</label>
-            <input type=”number” id=”vram-config-gpu” class=”hf-assistant-input” style=”margin-bottom:0;” min=”1” max=”512”
-              list=”gpu-count-list”>
-            <datalist id=”gpu-count-list”>
-              <option value=”1”><option value=”2”><option value=”4”>
-              <option value=”8”><option value=”16”><option value=”32”>
-              <option value=”64”><option value=”128”>
+            <label class="hf-assistant-label" style="margin-bottom:2px;">GPU 数量</label>
+            <input type="number" id="vram-config-gpu" class="hf-assistant-input" style="margin-bottom:0;" min="1" max="512"
+              list="gpu-count-list">
+            <datalist id="gpu-count-list">
+              <option value="1"><option value="2"><option value="4">
+              <option value="8"><option value="16"><option value="32">
+              <option value="64"><option value="128">
             </datalist>
           </div>
         </div>
-        <div id=”vram-total-label” style=”font-size:11px;color:#6b7280;min-height:16px;margin-bottom:8px;”></div>
-        <div id=”vram-display”><div style=”color:#9ca3af;font-size:11px;”>加载模型信息中…</div></div>
+        <div style="margin-bottom:6px;">
+          <label class="hf-assistant-label" style="margin-bottom:2px;">量化精度</label>
+          <select id="vram-precision" class="hf-assistant-select" style="margin-bottom:0;">
+            <option value="" data-label="默认">默认</option>
+            <option value="fp16" data-label="FP16 / BF16">FP16 / BF16</option>
+            <option value="fp8" data-label="FP8">FP8</option>
+            <option value="int8" data-label="INT8">INT8</option>
+            <option value="int4" data-label="INT4">INT4</option>
+            <option value="q4" data-label="Q4 (GGUF)">Q4 (GGUF)</option>
+            <option value="q4_k_m" data-label="Q4_K_M (GGUF)">Q4_K_M (GGUF)</option>
+            <option value="q5_k_m" data-label="Q5_K_M (GGUF)">Q5_K_M (GGUF)</option>
+            <option value="q6_k" data-label="Q6_K (GGUF)">Q6_K (GGUF)</option>
+            <option value="q8_0" data-label="Q8_0 (GGUF)">Q8_0 (GGUF)</option>
+            <option value="awq" data-label="AWQ">AWQ</option>
+            <option value="gptq" data-label="GPTQ">GPTQ</option>
+          </select>
+        </div>
+        <div id="vram-total-label" style="font-size:11px;color:#6b7280;"></div>
+        <div id="vram-display"><div style="color:#9ca3af;font-size:11px;">加载模型信息中…</div></div>
       </div>
 
-      <div class=”hf-assistant-card”>
-        <div class=”hf-assistant-card-title” style=”margin-bottom:8px;” id=”cmd-card-title”>命令 · ${getToolLabel(this.currentTool)}</div>
-        <div class=”hf-assistant-command” id=”command-display”>
-          <button class=”hf-assistant-command-copy” id=”copy-cmd-btn”>${t('copyCommand')}</button>
-          <button class=”hf-assistant-command-copy” id=”favorite-cmd-btn” style=”right:84px;”>${t('favoriteCommand')}</button>
-          <span id=”command-text”>加载中…</span>
+      <div class="hf-assistant-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
+          <div class="hf-assistant-card-title" style="margin:0;" id="cmd-card-title">命令 · ${getToolLabel(this.currentTool)}</div>
+          <div style="display:flex;gap:10px;">
+            <button type="button" class="hf-assistant-inline-action" id="favorite-cmd-btn">${t('favoriteCommand')}</button>
+            <button type="button" class="hf-assistant-inline-action" id="copy-cmd-btn">${t('copyCommand')}</button>
+          </div>
         </div>
-        <div style=”margin-top:8px;color:#6b7280;font-size:11px;line-height:1.5;margin-bottom:12px;”>
-          收藏后会出现在”收藏”Tab 对应模型下面，可继续复用。
+        <div class="hf-assistant-command" id="command-display"><span id="command-text">加载中…</span></div>
+        <div style="margin-top:8px;color:#6b7280;font-size:11px;line-height:1.5;margin-bottom:12px;">
+          收藏后会出现在"收藏"Tab 对应模型下面，可继续复用。
         </div>
-        <div style=”border-top:1px solid #e5e7eb;padding-top:10px;”>
-          <div style=”margin-bottom:10px;”>
-            <label class=”hf-assistant-label” style=”margin-bottom:4px;”>部署工具</label>
-            <select class=”hf-assistant-select” id=”cmd-config-tool” style=”margin-bottom:0;”>
-              ${getSupportedTools().map(t => `<option value=”${t}” ${t === this.currentTool ? 'selected' : ''}>${getToolLabel(t)}</option>`).join('')}
+        <div style="border-top:1px solid #e5e7eb;padding-top:10px;">
+          <div style="margin-bottom:10px;">
+            <label class="hf-assistant-label" style="margin-bottom:4px;">部署工具</label>
+            <select class="hf-assistant-select" id="cmd-config-tool" style="margin-bottom:0;">
+              ${getSupportedTools().map(t => `<option value="${t}" ${t === this.currentTool ? 'selected' : ''}>${getToolLabel(t)}</option>`).join('')}
             </select>
           </div>
-          <div id=”cmd-config-params”></div>
+          <div id="cmd-config-params"></div>
         </div>
       </div>
 
@@ -191,14 +210,14 @@ const DeployTab = {
     }
     if (!matched) {
       gpuSelect.value = 'custom';
-      vramInput.value = savedVram;
+      vramInput.value = 0;
     }
     updateTotal();
 
     gpuSelect.addEventListener('change', () => {
       const val = gpuSelect.value;
       if (val === 'custom') {
-        vramInput.value = '';
+        vramInput.value = '0';
         vramInput.focus();
         Storage.set('selectedGPU', '');
       } else {
@@ -221,6 +240,14 @@ const DeployTab = {
     });
     vramInput.addEventListener('change', updateTotal);
     countInput.addEventListener('change', updateTotal);
+
+    const precisionSelect = container.querySelector('#vram-precision');
+    if (precisionSelect) {
+      precisionSelect.addEventListener('change', () => {
+        this.vramPrecision = precisionSelect.value || null;
+        this.updateVramEstimate(container);
+      });
+    }
 
     container.querySelector('#cmd-config-tool').addEventListener('change', e => {
       this.currentTool = e.target.value;
@@ -469,8 +496,7 @@ const DeployTab = {
 
       const cmd = generateCommand(this.currentTool, modelId, this.currentParams);
       const cmdEl = container.querySelector('#command-text');
-      cmdEl.textContent = cmd;
-      cmdEl.style.paddingTop = '28px';
+      if (cmdEl) cmdEl.textContent = cmd;
       this.currentCommand = cmd;
       this.updateCommandFavoriteState(container);
 
@@ -489,7 +515,6 @@ const DeployTab = {
     );
     this.commandFavorited = isFavorited;
     btn.textContent = isFavorited ? t('unfavoriteCommand') : t('favoriteCommand');
-    btn.style.background = isFavorited ? '#92400e' : '#374151';
   },
 
   queueFavoriteCommand(modelId, commandEntry) {
@@ -505,7 +530,7 @@ const DeployTab = {
 
     const settings = await Storage.getAll();
     const userVramGB = settings.vramGB || 64;
-    const precision = this.inferPrecision();
+    const precision = this.vramPrecision || this.inferPrecision();
 
     const estimate = estimateVRAM(this.modelInfo, {
       precision,
@@ -515,27 +540,41 @@ const DeployTab = {
     });
 
     const vramDisplay = container.querySelector('#vram-display');
+    const totalLabel = container.querySelector('#vram-total-label');
     if (!vramDisplay) return;
 
     if (estimate.vramGB === null) {
       vramDisplay.innerHTML = '<div style="color:#9ca3af;font-size:11px;">无法识别模型参数量</div>';
+      if (totalLabel) totalLabel.textContent = '';
       return;
     }
 
     const statusClass = `hf-assistant-status-${estimate.status}`;
     const statusText = estimate.status === 'ok' ? t('vramOk') :
                        estimate.status === 'warning' ? t('vramWarning') : t('vramInsufficient');
-    const sourceTag = estimate.configLoaded
-      ? '<span style="color:#16a34a;">● 实际配置</span>'
-      : '<span style="color:#ca8a04;">● 估算值</span>';
+
+    const hasKV = estimate.kvCacheGB > 0;
+    const precLabel = precision.toUpperCase();
+    const formula = hasKV
+      ? `模型权重(${precLabel}) + KV Cache ≈ ${estimate.weightGB} + ${estimate.kvCacheGB} = ${estimate.vramGB} GB`
+      : `模型权重(${precLabel}) ≈ ${estimate.weightGB} GB`;
 
     vramDisplay.innerHTML = `
-      <div style="font-size:18px;font-weight:600;margin-bottom:4px;">${estimate.vramGB} GB</div>
-      <div class="${statusClass}">${statusText}</div>
-      <div style="color:#6b7280;font-size:10px;margin-top:6px;">
-        ${estimate.paramsB}B 参数 · ${estimate.precision} · ${sourceTag}
+      <div style="display:flex;gap:16px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px;">
+        <div>
+          <span style="font-size:10px;color:#6b7280;">机器总显存</span>
+          <span style="font-size:14px;font-weight:600;color:#374151;">${userVramGB} GB</span>
+        </div>
+        <span style="color:#d1d5db;font-size:12px;">→</span>
+        <div>
+          <span style="font-size:10px;color:#6b7280;">模型需</span>
+          <span style="font-size:18px;font-weight:600;color:#1f2937;">${estimate.vramGB} GB</span>
+        </div>
       </div>
+      <div class="${statusClass}" style="font-size:13px;font-weight:500;margin-bottom:4px;">${statusText}</div>
+      <div style="color:#6b7280;font-size:10px;line-height:1.6;">${formula}</div>
     `;
+    if (totalLabel) totalLabel.textContent = '';
   },
 
   inferPrecision() {

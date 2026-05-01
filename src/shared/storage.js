@@ -42,7 +42,7 @@ const Storage = {
       modelId: entry.modelId,
       modelscopeUrl: entry.modelscopeUrl || '',
       addedAt: entry.addedAt || Date.now(),
-      isModelFavorite: false,
+      isModelFavorite: !!entry.isModelFavorite,
       commands: Array.isArray(entry.commands) ? entry.commands : []
     };
   },
@@ -92,8 +92,43 @@ const Storage = {
     const next = favorites.flatMap(f => {
       if (f.modelId !== modelId) return [f];
       const commands = f.commands.filter(c => !(c.tool === tool && c.command === command));
-      if (commands.length === 0) return [];
+      if (commands.length === 0 && !f.isModelFavorite) return [];
       return [{ ...f, commands }];
+    });
+    await this.saveFavorites(next);
+  },
+
+  async isModelFavorited(modelId) {
+    const favorites = await this.getFavorites();
+    const entry = favorites.find(f => f.modelId === modelId);
+    return !!entry && !!entry.isModelFavorite;
+  },
+
+  async addModelFavorite(modelId, modelscopeUrl) {
+    const favorites = await this.getFavorites();
+    let entry = favorites.find(f => f.modelId === modelId);
+    if (!entry) {
+      entry = {
+        modelId,
+        modelscopeUrl: modelscopeUrl || '',
+        addedAt: Date.now(),
+        isModelFavorite: true,
+        commands: []
+      };
+      favorites.push(entry);
+    } else {
+      entry.isModelFavorite = true;
+      if (modelscopeUrl && !entry.modelscopeUrl) entry.modelscopeUrl = modelscopeUrl;
+    }
+    await this.saveFavorites(favorites);
+  },
+
+  async removeModelFavorite(modelId) {
+    const favorites = await this.getFavorites();
+    const next = favorites.flatMap(f => {
+      if (f.modelId !== modelId) return [f];
+      if (f.commands.length === 0) return [];
+      return [{ ...f, isModelFavorite: false }];
     });
     await this.saveFavorites(next);
   },

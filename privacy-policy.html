@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>隐私政策 - HF Model Assistant</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+      color: #1f2937;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 48px 24px;
+    }
+    h1 { font-size: 24px; margin-bottom: 8px; }
+    h2 { font-size: 18px; margin-top: 32px; margin-bottom: 12px; color: #374151; }
+    p { margin-bottom: 12px; font-size: 15px; }
+    .date { color: #6b7280; font-size: 13px; margin-bottom: 24px; }
+    a { color: #2563eb; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .contact { margin-top: 40px; padding-top: 24px; border-top: 1px solid #e5e7eb; }
+  </style>
+</head>
+<body>
+  <h1>HF Model Assistant 隐私政策</h1>
+  <div class="date">生效日期：2026-05-01</div>
+
+  <h2>数据收集</h2>
+  <p>本扩展<strong>不收集、不存储、不传输</strong>任何用户个人数据。所有信息（包括用户设置、收藏记录、模型映射缓存）仅保存在用户本地浏览器的 <code>chrome.storage</code> 中，不会上传到任何服务器。</p>
+
+  <h2>权限说明</h2>
+  <p>扩展申请以下权限，仅用于实现核心功能：</p>
+  <ul>
+    <li><strong>activeTab</strong> — 在当前访问的模型页面注入辅助侧边栏</li>
+    <li><strong>storage</strong> — 保存用户偏好设置和收藏数据到本地</li>
+    <li><strong>clipboardWrite</strong> — 将生成的命令复制到剪贴板</li>
+  </ul>
+
+  <h2>访问的网站</h2>
+  <p>扩展仅在以下域名运行：</p>
+  <ul>
+    <li><a href="https://huggingface.co" target="_blank">huggingface.co</a></li>
+    <li><a href="https://www.modelscope.cn" target="_blank">modelscope.cn</a></li>
+  </ul>
+
+  <h2>第三方服务</h2>
+  <p>扩展不包含任何第三方追踪代码或分析工具。模型映射查询功能仅访问 ModelScope 公开 API，不传递用户身份信息。</p>
+
+  <div class="contact">
+    <h2>联系我们</h2>
+    <p>如有隐私相关问题，请通过以下方式联系：</p>
+    <p>邮箱：jackyrwj@gmail.com</p>
+  </div>
+</body>
+</html>

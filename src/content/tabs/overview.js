@@ -1,5 +1,6 @@
 const OverviewTab = {
   async render(container, modelInfo) {
+    this.modelInfo = modelInfo;
     if (!modelInfo) {
       container.innerHTML = `<div class="hf-assistant-card">${t('errorNoModelInfo')}</div>`;
       return;
@@ -14,11 +15,10 @@ const OverviewTab = {
 
     const specRows = [];
 
-    if (modelInfo.parameterCount) {
-      specRows.push(['📊 参数量', modelInfo.parameterCount]);
-    }
-    if (vramText) {
-      specRows.push(['🎮 显存 (FP16)', vramText]);
+    if (modelInfo.parameterCount || vramText) {
+      let paramText = modelInfo.parameterCount || '';
+      if (vramText) paramText += (paramText ? ' · ' : '') + `显存 ${vramText}`;
+      specRows.push(['📊 参数', paramText]);
     }
     if (modelInfo.contextLength) {
       specRows.push(['📐 上下文长度', modelInfo.contextLength]);
@@ -64,10 +64,14 @@ const OverviewTab = {
 
     const isModelScope = modelInfo.platform === 'modelscope';
     const mappingTitle = isModelScope ? 'Hugging Face' : '魔搭社区';
+    const knownMappingUrl = isModelScope ? modelInfo.hfUrl : modelInfo.modelscopeUrl;
 
     container.innerHTML = `
       <div class="hf-assistant-card">
-        <div style="font-weight:600;font-size:13px;word-break:break-all;color:#111827;">${this.esc(modelInfo.modelId)}</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <div style="font-weight:600;font-size:13px;word-break:break-all;color:#111827;flex:1;">${this.esc(modelInfo.modelId)}</div>
+          <button type="button" id="favorite-model-btn" style="background:transparent;border:none;cursor:pointer;font-size:14px;padding:2px 4px;color:#9ca3af;flex-shrink:0;" title="收藏模型">☆</button>
+        </div>
         ${statsHTML}
         ${specsHTML}
         ${tagsHTML}
@@ -75,14 +79,58 @@ const OverviewTab = {
 
       <div class="hf-assistant-card" id="mapping-card">
         <div class="hf-assistant-card-title">${mappingTitle}</div>
-        <div id="mapping-status">加载中…</div>
+        <div id="mapping-status">
+          ${knownMappingUrl ? `
+            <a href="${knownMappingUrl}" target="_blank" class="hf-assistant-link" style="word-break:break-all;font-size:11px;">${knownMappingUrl}</a>
+          ` : `
+            <button type="button" id="load-mapping-btn" style="
+              border:1px solid #d1d5db;background:#fff;color:#374151;cursor:pointer;
+              border-radius:6px;padding:6px 10px;font-size:11px;">
+              点击查询对应模型
+            </button>
+          `}
+        </div>
       </div>
     `;
 
-    if (isModelScope) {
-      this.fetchHFMapping(modelInfo, container);
-    } else {
-      this.fetchModelScopeMapping(modelInfo, container);
+    const loadBtn = container.querySelector('#load-mapping-btn');
+    if (loadBtn) {
+      loadBtn.addEventListener('click', async () => {
+        loadBtn.disabled = true;
+        loadBtn.textContent = '查询中…';
+        if (isModelScope) {
+          await this.fetchHFMapping(modelInfo, container);
+        } else {
+          await this.fetchModelScopeMapping(modelInfo, container);
+        }
+      });
+    }
+
+    const favBtn = container.querySelector('#favorite-model-btn');
+    if (favBtn) {
+      const updateFavBtn = async () => {
+        const isFav = await Storage.isModelFavorited(modelInfo.modelId);
+        favBtn.textContent = isFav ? '★' : '☆';
+        favBtn.style.color = isFav ? '#ef4444' : '#9ca3af';
+        favBtn.title = isFav ? '取消收藏' : '收藏模型';
+      };
+      updateFavBtn();
+
+      favBtn.addEventListener('click', async () => {
+        const isFav = await Storage.isModelFavorited(modelInfo.modelId);
+        if (isFav) {
+          await Storage.removeModelFavorite(modelInfo.modelId);
+          Sidebar.showToast('已取消收藏');
+        } else {
+          await Storage.addModelFavorite(modelInfo.modelId, modelInfo.modelscopeUrl || '');
+          Sidebar.showToast('已收藏模型');
+        }
+        await updateFavBtn();
+        if (Sidebar.currentTab === 'favorites' && typeof FavoritesTab !== 'undefined') {
+          FavoritesTab.rendered = false;
+          FavoritesTab.render(Sidebar.getPanel('favorites'));
+        }
+      });
     }
   },
 
@@ -125,10 +173,10 @@ const OverviewTab = {
     const searchKeywords = this.buildSearchKeywords(modelInfo);
     let bestMatch = null;
     let bestScore = 0;
+    const settings = await Storage.getAll();
 
     for (const keyword of searchKeywords) {
       try {
-        const settings = await Storage.getAll();
         const apiResult = await API.searchModelScope(keyword, settings.modelscopeApiEndpoint);
         if (apiResult.error || !apiResult.data) continue;
         const results = apiResult.data.data || apiResult.data.results || [];

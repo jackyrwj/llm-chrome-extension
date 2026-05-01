@@ -75,9 +75,7 @@ const RequestTab = {
           <div class="hf-assistant-card-title" style="margin:0;">curl 命令</div>
           <button type="button" class="hf-assistant-inline-action" id="req-copy-btn">复制</button>
         </div>
-        <div class="hf-assistant-command" id="req-command-display">
-          <span id="req-command-text" style="padding-top:4px;white-space:pre;font-size:10px;line-height:1.6;display:block;"></span>
-        </div>
+        <div class="hf-assistant-command" id="req-command-display"><span id="req-command-text" style="white-space:pre;font-size:10px;line-height:1.6;display:block;"></span></div>
       </div>
 
       <div class="hf-assistant-card">
@@ -91,14 +89,14 @@ const RequestTab = {
         ${textField('模型', 'model', '模型 ID')}
         ${textarea('System Prompt（可选）', 'systemPrompt', '留空则不发送 system 消息')}
         ${textarea('User Message', 'userMessage', '你好')}
-        ${numField('temperature', 'temperature', { min: 0, max: 2, step: 0.01 })}
-        ${numField('max_tokens', 'maxTokens', { min: 1 })}
 
         <details id="req-advanced" style="margin-top:6px;">
           <summary style="cursor:pointer;font-size:12px;color:#6b7280;user-select:none;padding:4px 0;list-style:none;display:flex;align-items:center;gap:4px;">
             <span id="req-adv-arrow" style="display:inline-block;transition:transform 0.15s;">▶</span> 高级参数
           </summary>
           <div style="padding-top:8px;">
+            ${numField('temperature', 'temperature', { min: 0, max: 2, step: 0.01 })}
+            ${numField('max_tokens', 'maxTokens', { min: 1 })}
             ${numField('top_p', 'topP', { min: 0, max: 1, step: 0.01 })}
             ${numField('frequency_penalty', 'frequencyPenalty', { min: -2, max: 2, step: 0.01 })}
             ${numField('presence_penalty', 'presencePenalty', { min: -2, max: 2, step: 0.01 })}

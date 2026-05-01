@@ -4,7 +4,6 @@ const DownloadTab = {
     settings: null,
     selectedTool: 'hf_cli',
     selectedMirror: 'hf-mirror',
-    advancedOpen: false,
     fileFilters: {
       safetensors: true,
       bin: true,
@@ -14,6 +13,8 @@ const DownloadTab = {
     },
     localDir: '',
     hfToken: '',
+    revision: '',
+    resumeDownload: false,
   },
 
   TOOLS: [
@@ -62,7 +63,7 @@ const DownloadTab = {
   },
 
   buildCommand() {
-    const { modelInfo, selectedTool, selectedMirror, localDir, hfToken, fileFilters } = this.state;
+    const { modelInfo, selectedTool, selectedMirror, localDir, hfToken, fileFilters, revision, resumeDownload } = this.state;
     if (!modelInfo) return '';
     const modelId = modelInfo.modelId;
     const platform = this.getPlatform();
@@ -75,17 +76,17 @@ const DownloadTab = {
 
       let cmd = `$ huggingface-cli download ${modelId}`;
       if (localDir) cmd += ` \\\n  --local-dir ${localDir}`;
+      if (revision) cmd += ` \\\n  --revision ${revision}`;
+      if (resumeDownload) cmd += ` \\\n  --resume-download`;
 
-      const allOn = Object.values(fileFilters).every(v => v);
-      if (!allOn) {
-        const includes = [];
-        if (fileFilters.safetensors) includes.push('*.safetensors');
-        if (fileFilters.bin)         includes.push('*.bin');
-        if (fileFilters.gguf)        includes.push('*.gguf');
-        if (fileFilters.config)      includes.push('config.json');
-        if (fileFilters.tokenizer)   includes.push('tokenizer*');
-        if (includes.length) cmd += ` \\\n  --include "${includes.join('" "')}"`;
-      }
+      const includes = [];
+      if (fileFilters.safetensors) includes.push('*.safetensors');
+      if (fileFilters.bin)         includes.push('*.bin');
+      if (fileFilters.gguf)        includes.push('*.gguf');
+      if (fileFilters.config)      includes.push('config.json');
+      if (fileFilters.tokenizer)   includes.push('tokenizer*');
+      if (includes.length) cmd += ` \\\n  --include "${includes.join('" "')}"`;
+
       if (hfToken) cmd += ` \\\n  --token ${hfToken}`;
       parts.push(cmd);
       return parts.join('\n');
@@ -98,7 +99,9 @@ const DownloadTab = {
       const skipLine = platform === 'windows'
         ? '$ $env:GIT_LFS_SKIP_SMUDGE="1"'
         : '$ GIT_LFS_SKIP_SMUDGE=1';
-      return `${skipLine}\n$ git clone ${repoUrl}.git`;
+      let cloneCmd = `$ git clone ${repoUrl}.git`;
+      if (revision) cloneCmd += ` --branch ${revision}`;
+      return `${skipLine}\n${cloneCmd}`;
     }
 
     if (selectedTool === 'python') {
@@ -109,13 +112,15 @@ const DownloadTab = {
       code += `from huggingface_hub import snapshot_download\n\n`;
       code += `snapshot_download(\n    repo_id="${modelId}"`;
       if (localDir) code += `,\n    local_dir="${localDir}"`;
+      if (revision)  code += `,\n    revision="${revision}"`;
       if (hfToken)  code += `,\n    token="${hfToken}"`;
       code += '\n)';
       return code;
     }
 
     if (selectedTool === 'browser') {
-      return `${mirrorBase}/${modelId}/tree/main`;
+      const rev = revision || 'main';
+      return `${mirrorBase}/${modelId}/tree/${rev}`;
     }
 
     return '';
@@ -129,20 +134,20 @@ const DownloadTab = {
     if (selectedTool === 'python')   tips.push('💡 前置条件：pip install huggingface_hub');
     if (selectedTool === 'browser')  tips.push('💡 在浏览器中打开文件列表，手动下载所需文件');
     if (selectedMirror === 'hf-mirror') tips.push('🌐 使用社区镜像，国内访问较快');
-    if (selectedMirror === 'modelscope' && modelInfo && !modelInfo.modelscopeUrl)
+    if (selectedMirror === 'modelscope' && selectedTool === 'git_lfs' && modelInfo && !modelInfo.modelscopeUrl)
       tips.push('⚠️ 该模型在 ModelScope 上未找到对应版本，已回退到 hf-mirror');
     if (modelInfo && modelInfo.isGated && !hfToken)
-      tips.push('⚠️ 该模型需要授权，请在高级选项中填写 HF Token');
-    if (!Object.values(fileFilters).every(v => v))
+      tips.push('⚠️ 该模型需要授权，请填写 HF Token');
+    if (Object.values(fileFilters).some(v => v))
       tips.push('📁 已启用文件过滤，仅下载选中类型');
     return tips;
   },
 
   getModelSizeText() {
     const { modelInfo } = this.state;
-    if (!modelInfo || !modelInfo.files || modelInfo.files.length === 0) return '大小未知';
+    if (!modelInfo || !modelInfo.files || modelInfo.files.length === 0) return '';
     const totalBytes = modelInfo.files.reduce((sum, f) => sum + (f.size || 0), 0);
-    if (totalBytes === 0) return '大小未知';
+    if (totalBytes === 0) return '';
     if (totalBytes >= 1024 ** 3) return `~${(totalBytes / 1024 ** 3).toFixed(1)} GB`;
     if (totalBytes >= 1024 ** 2) return `~${(totalBytes / 1024 ** 2).toFixed(0)} MB`;
     return `~${(totalBytes / 1024).toFixed(0)} KB`;
@@ -156,7 +161,7 @@ const DownloadTab = {
   },
 
   buildHTML() {
-    const { modelInfo, selectedTool, selectedMirror, advancedOpen, fileFilters, localDir, hfToken } = this.state;
+    const { modelInfo, selectedTool, selectedMirror, fileFilters, localDir, hfToken, revision, resumeDownload } = this.state;
     const toolLabel = this.TOOLS.find(t => t.id === selectedTool)?.label || selectedTool;
     const cmd = this.buildCommand();
     const tips = this.getTips();
@@ -189,7 +194,7 @@ const DownloadTab = {
       ? `<div style="margin-top:8px;font-size:11px;color:#6b7280;line-height:1.7;">${tips.map(this.esc.bind(this)).join('<br>')}</div>`
       : '';
 
-    const msWarning = selectedMirror === 'modelscope' && modelInfo && !modelInfo.modelscopeUrl
+    const msWarning = selectedMirror === 'modelscope' && selectedTool === 'git_lfs' && modelInfo && !modelInfo.modelscopeUrl
       ? `<div style="font-size:11px;color:#ca8a04;margin-top:4px;">⚠️ 该模型在 ModelScope 上未找到，命令已自动回退到 hf-mirror</div>`
       : '';
 
@@ -201,53 +206,59 @@ const DownloadTab = {
          </div>`
       : '';
 
+    const sizeText = this.getModelSizeText();
     return `
-      ${modelInfo ? `<div class="hf-download-model-info"><strong>${this.esc(modelInfo.modelId)}</strong> · ${this.getModelSizeText()}</div>` : ''}
+      ${modelInfo ? `<div class="hf-download-model-info"><strong>${this.esc(modelInfo.modelId)}</strong>${sizeText ? ' · ' + sizeText : ''}</div>` : ''}
 
       <div class="hf-assistant-card">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
           <div class="hf-assistant-card-title" style="margin:0;">命令 · ${toolLabel}</div>
           <button type="button" class="hf-assistant-inline-action" id="dl-copy-btn">复制</button>
         </div>
-        <div class="hf-assistant-command">
-          <span id="dl-command-text" style="display:block;white-space:pre-wrap;word-break:break-all;font-size:10px;line-height:1.6;">${this.esc(cmd)}</span>
-        </div>
+        <div class="hf-assistant-command"><span id="dl-command-text" style="display:block;white-space:pre-wrap;word-break:break-all;font-size:10px;line-height:1.6;">${this.esc(cmd)}</span></div>
         ${tipsHTML}
-      </div>
 
-      <div class="hf-assistant-card">
-        <div class="hf-assistant-card-title" style="margin-bottom:10px;">配置</div>
+        <div style="border-top:1px solid #e5e7eb;padding-top:10px;margin-top:12px;">
+          <div style="margin-bottom:10px;">
+            <label class="hf-assistant-label" style="margin-bottom:4px;">下载工具</label>
+            <div class="hf-download-segmented">${toolBtns}</div>
+          </div>
 
-        <div style="margin-bottom:10px;">
-          <label class="hf-assistant-label" style="margin-bottom:4px;">下载工具</label>
-          <div class="hf-download-segmented">${toolBtns}</div>
-        </div>
+          <div style="margin-bottom:8px;">
+            <label class="hf-assistant-label" style="margin-bottom:4px;">网络 / 镜像</label>
+            <select class="hf-assistant-select" id="dl-mirror-select" style="margin-bottom:0;">${mirrorOpts}</select>
+            ${msWarning}
+          </div>
 
-        <div style="margin-bottom:8px;">
-          <label class="hf-assistant-label" style="margin-bottom:4px;">网络 / 镜像</label>
-          <select class="hf-assistant-select" id="dl-mirror-select" style="margin-bottom:0;">${mirrorOpts}</select>
-          ${msWarning}
-        </div>
+          <div style="margin-bottom:6px;">
+            <label class="hf-assistant-label" style="margin-bottom:4px;">本地目录</label>
+            <input type="text" class="hf-assistant-input" id="dl-local-dir"
+              value="${this.esc(localDir)}" style="margin-bottom:0;">
+          </div>
 
-        <div style="margin-bottom:6px;">
-          <label class="hf-assistant-label" style="margin-bottom:4px;">本地目录</label>
-          <input type="text" class="hf-assistant-input" id="dl-local-dir"
-            value="${this.esc(localDir)}" style="margin-bottom:0;">
-        </div>
-
-        <details id="dl-advanced" ${advancedOpen ? 'open' : ''} style="margin-top:6px;">
-          <summary style="cursor:pointer;font-size:12px;color:#6b7280;user-select:none;padding:4px 0;list-style:none;display:flex;align-items:center;gap:4px;">
-            <span id="dl-adv-arrow" style="display:inline-block;transition:transform 0.15s;${advancedOpen ? 'transform:rotate(90deg)' : ''}">▶</span>
-            高级选项
-          </summary>
-          <div style="padding-top:8px;">
+          <div style="margin-top:10px;">
             <label class="hf-assistant-label" style="margin-bottom:6px;">
               文件类型过滤${filtersDisabled ? '（git-lfs 不支持）' : ''}
             </label>
             <div class="hf-download-file-filters">${filterHTML}</div>
-            ${tokenRow}
           </div>
-        </details>
+
+          <div style="margin-top:10px;">
+            <label class="hf-assistant-label" style="margin-bottom:4px;">版本 / Revision（可选）</label>
+            <input type="text" class="hf-assistant-input" id="dl-revision"
+              placeholder="如 main、v1.0、commit-hash" value="${this.esc(revision)}" style="margin-bottom:0;">
+          </div>
+
+          ${selectedTool === 'hf_cli' ? `
+          <div style="margin-top:10px;">
+            <label class="hf-download-file-filter" style="cursor:pointer;">
+              <input type="checkbox" id="dl-resume" ${resumeDownload ? 'checked' : ''}>
+              <span>断点续传（--resume-download）</span>
+            </label>
+          </div>` : ''}
+
+          ${tokenRow}
+        </div>
       </div>
     `;
   },
@@ -285,11 +296,16 @@ const DownloadTab = {
       });
     });
 
-    const details = container.querySelector('#dl-advanced');
-    const arrow = container.querySelector('#dl-adv-arrow');
-    if (details) details.addEventListener('toggle', () => {
-      this.state.advancedOpen = details.open;
-      if (arrow) arrow.style.transform = details.open ? 'rotate(90deg)' : '';
+    const revisionInput = container.querySelector('#dl-revision');
+    if (revisionInput) revisionInput.addEventListener('input', e => {
+      this.state.revision = e.target.value;
+      this.updateCommand(container);
+    });
+
+    const resumeCb = container.querySelector('#dl-resume');
+    if (resumeCb) resumeCb.addEventListener('change', e => {
+      this.state.resumeDownload = e.target.checked;
+      this.updateCommand(container);
     });
 
     const copyBtn = container.querySelector('#dl-copy-btn');

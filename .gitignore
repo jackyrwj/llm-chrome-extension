@@ -1,1 +1,4 @@
-.worktrees/
+.claude/
+hf-model-assistant.zip
+.DS_Store
+node_modules/
