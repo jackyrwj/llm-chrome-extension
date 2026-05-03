@@ -62,9 +62,6 @@ const Sidebar = {
             <span style="font-size:13px;">🍵</span> 支持开发者
           </button>
           <div class="hf-assistant-donate-panel" id="hf-donate-panel" style="display:none;">
-            <a href="https://buymeacoffee.com/jackyrwj" target="_blank" class="hf-assistant-donate-bmc">
-              ☕ Buy Me a Coffee
-            </a>
             <div class="hf-assistant-donate-wechat">
               <img id="hf-wechat-qr" alt="微信收款码" style="width:120px;height:120px;border-radius:6px;border:1px solid #e5e7eb;cursor:zoom-in;">
               <span style="font-size:10px;color:#9ca3af;margin-top:4px;">微信扫码打赏</span>
@@ -204,22 +201,6 @@ const Sidebar = {
         flex-direction: column;
         align-items: center;
         gap: 10px;
-      }
-      .hf-assistant-donate-bmc {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        font-size: 11px;
-        color: #2563eb;
-        text-decoration: none;
-        padding: 6px 14px;
-        border-radius: 999px;
-        background: #eff6ff;
-        border: 1px solid #bfdbfe;
-        transition: all 0.2s;
-      }
-      .hf-assistant-donate-bmc:hover {
-        background: #dbeafe;
       }
       .hf-assistant-donate-wechat {
         display: flex;
