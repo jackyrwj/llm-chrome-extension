@@ -1,0 +1,23 @@
+{
+  "jobs": 2,
+  "tasks": [
+    {
+      "id": "marquee",
+      "promptFiles": ["prompts/marquee.md"],
+      "image": "marquee-1400x560.png",
+      "provider": "dashscope",
+      "model": "qwen-image-2.0-pro",
+      "size": "1400x560",
+      "quality": "2k"
+    },
+    {
+      "id": "small",
+      "promptFiles": ["prompts/small.md"],
+      "image": "small-880x560-raw.png",
+      "provider": "dashscope",
+      "model": "qwen-image-2.0-pro",
+      "size": "880x560",
+      "quality": "2k"
+    }
+  ]
+}
