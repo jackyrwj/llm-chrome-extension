@@ -293,20 +293,6 @@ const Sidebar = {
     panel.innerHTML = `
       <div class="hf-settings-section">
         <div class="hf-settings-section-title">通用</div>
-        ${row('默认部署工具', sel('s-default-tool', [
-          ['ollama','Ollama'],['vllm','vLLM'],['sglang','SGLang'],
-          ['llamacpp','llama.cpp'],['transformers','Transformers'],['tgi','TGI']
-        ], settings.defaultTool))}
-        ${row('我的显存', `<div style="display:flex;align-items:center;gap:4px;">
-          <input type="number" id="s-vram-gb" class="hf-settings-ctrl hf-assistant-input"
-            style="width:72px;margin:0;text-align:right;" value="${settings.vramGB}" min="1" max="9999">
-          <span style="font-size:12px;color:#6b7280;">GB</span>
-        </div>`)}
-        ${row('GPU 数量', `<div style="display:flex;align-items:center;gap:4px;">
-          <input type="number" id="s-gpu-count" class="hf-settings-ctrl hf-assistant-input"
-            style="width:72px;margin:0;text-align:right;" value="${settings.gpuCount}" min="1" max="16">
-          <span style="font-size:12px;color:#6b7280;">张</span>
-        </div>`)}
         ${row('推荐精度', sel('s-recommend-precision', [
           ['fp16','FP16'],['int8','INT8'],['int4','INT4'],['q4','Q4']
         ], settings.recommendPrecision))}
@@ -341,9 +327,6 @@ const Sidebar = {
 
     const save = (key, val) => Storage.setMultiple({ [key]: val });
 
-    panel.querySelector('#s-default-tool').addEventListener('change', e => save('defaultTool', e.target.value));
-    panel.querySelector('#s-vram-gb').addEventListener('change', e => save('vramGB', Math.max(1, parseInt(e.target.value) || 64)));
-    panel.querySelector('#s-gpu-count').addEventListener('change', e => save('gpuCount', Math.max(1, parseInt(e.target.value) || 1)));
     panel.querySelector('#s-recommend-precision').addEventListener('change', e => save('recommendPrecision', e.target.value));
     panel.querySelector('#s-mirror').addEventListener('change', e => save('preferredMirror', e.target.value));
     panel.querySelector('#s-language').addEventListener('change', e => save('language', e.target.value));
