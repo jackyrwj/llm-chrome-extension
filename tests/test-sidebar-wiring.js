@@ -22,7 +22,7 @@ assert(
   'Request tab must have a content panel'
 );
 assert(
-  sidebar.includes("RequestTab.render(this.getPanel('request'), this.modelInfo)"),
+  /RequestTab\.render\(\s*this\.getPanel\((['"])request\1\)\s*,\s*this\.modelInfo\s*\)/.test(sidebar),
   'Request tab must be routed to its renderer'
 );
 assert.strictEqual(I18N.zh.tabRequest, '请求');
