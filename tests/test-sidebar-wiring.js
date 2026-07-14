@@ -80,4 +80,16 @@ assert(
   'Request tab must not be gated behind having model info'
 );
 
+// content.js calls these lifecycle/layout helpers when SPA navigation moves
+// between model and non-model pages. Keep them defined on Sidebar so those
+// navigation paths do not throw at runtime.
+assert(
+  /updatePageMargin\s*\(/.test(sidebar),
+  'Sidebar must expose updatePageMargin() for content.js layout updates'
+);
+assert(
+  /destroy\s*\(/.test(sidebar),
+  'Sidebar must expose destroy() for content.js SPA teardown'
+);
+
 console.log('All sidebar wiring tests passed!');
