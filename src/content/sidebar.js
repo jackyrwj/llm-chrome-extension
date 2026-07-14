@@ -2,6 +2,7 @@ const Sidebar = {
   container: null,
   shadowRoot: null,
   isOpen: true,
+  currentWidth: 360,
   currentTab: 'overview',
   modelInfo: null,
 
@@ -268,12 +269,35 @@ const Sidebar = {
     this.isOpen = false;
     this.shadowRoot.querySelector('.hf-assistant-sidebar').classList.add('collapsed');
     this.shadowRoot.querySelector('.hf-assistant-collapsed').style.display = 'block';
+    this.updatePageMargin(0);
   },
 
   expand() {
     this.isOpen = true;
     this.shadowRoot.querySelector('.hf-assistant-sidebar').classList.remove('collapsed');
     this.shadowRoot.querySelector('.hf-assistant-collapsed').style.display = 'none';
+    this.updatePageMargin(this.currentWidth);
+  },
+
+  updatePageMargin(width = 360) {
+    if (width > 0) this.currentWidth = width;
+    if (window.__HF_ASSISTANT_PLATFORM__ !== 'hf') return;
+
+    const main = document.querySelector('main, .container, #main-content');
+    if (!main) return;
+
+    main.style.marginRight = this.isOpen && width > 0 ? `${width}px` : '';
+  },
+
+  destroy() {
+    this.updatePageMargin(0);
+    if (this.container) {
+      this.container.remove();
+    }
+    this.container = null;
+    this.shadowRoot = null;
+    this.modelInfo = null;
+    this.currentTab = 'overview';
   },
 
   getPanel(name) {
