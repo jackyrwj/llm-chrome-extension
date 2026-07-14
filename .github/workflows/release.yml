@@ -1,0 +1,86 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Run tests
+        run: node --test tests/*.js
+
+      - name: Check JavaScript syntax
+        run: |
+          find src tests -type f -name '*.js' -print0 \
+            | xargs -0 -n1 node --check
+
+      - name: Validate required files
+        run: |
+          test -f manifest.json
+          python3 -m json.tool manifest.json > /dev/null
+          test -d src
+          test -d icons
+          test -d docs
+          test -f privacy-policy.html
+
+      - name: Verify tag matches manifest version
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          MANIFEST_VERSION="$(
+            python3 -c "import json; print(json.load(open('manifest.json'))['version'])"
+          )"
+
+          echo "Tag version: $TAG_VERSION"
+          echo "Manifest version: $MANIFEST_VERSION"
+
+          if [ "$TAG_VERSION" != "$MANIFEST_VERSION" ]; then
+            echo "::error::Tag version does not match manifest.json version"
+            exit 1
+          fi
+
+      - name: Create extension archive
+        shell: bash
+        run: |
+          ARCHIVE="llm-chrome-extension-${GITHUB_REF_NAME}.zip"
+
+          zip -r "$ARCHIVE" \
+            manifest.json \
+            src \
+            icons \
+            docs \
+            privacy-policy.html \
+            -x '*.DS_Store'
+
+          test -s "$ARCHIVE"
+
+      - name: Create GitHub Release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            "llm-chrome-extension-${GITHUB_REF_NAME}.zip" \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes \
+            --verify-tag
