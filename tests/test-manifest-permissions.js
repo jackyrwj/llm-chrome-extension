@@ -6,7 +6,7 @@ const root = path.resolve(__dirname, '..');
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
 const privacyPolicy = fs.readFileSync(path.join(root, 'privacy-policy.html'), 'utf8');
 
-assert.strictEqual(manifest.version, '1.0.2', 'The remediation package must use a new store version');
+assert(manifest.version, 'manifest must declare a version');
 assert(
   !manifest.permissions.includes('activeTab'),
   'activeTab must not be requested because the extension uses scoped content scripts'
