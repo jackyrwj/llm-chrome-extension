@@ -2,6 +2,7 @@ const Sidebar = {
   container: null,
   shadowRoot: null,
   isOpen: true,
+  currentWidth: 360,
   currentTab: 'overview',
   modelInfo: null,
 
@@ -37,6 +38,7 @@ const Sidebar = {
         <div class="hf-assistant-tabs">
           <button class="hf-assistant-tab active" data-tab="overview" data-i18n="tabOverview">概览</button>
           <button class="hf-assistant-tab" data-tab="deploy" data-i18n="tabDeploy">部署</button>
+          <button class="hf-assistant-tab" data-tab="request" data-i18n="tabRequest">请求</button>
           <button class="hf-assistant-tab" data-tab="download" data-i18n="tabDownload">下载</button>
           <button class="hf-assistant-tab" data-tab="favorites" data-i18n="tabFavorites">收藏</button>
           <button class="hf-assistant-tab" data-tab="recommend" data-i18n="tabRecommend">推荐</button>
@@ -44,6 +46,7 @@ const Sidebar = {
         <div class="hf-assistant-content">
           <div class="hf-assistant-panel active" id="panel-overview"></div>
           <div class="hf-assistant-panel" id="panel-deploy"></div>
+          <div class="hf-assistant-panel" id="panel-request"></div>
           <div class="hf-assistant-panel" id="panel-download"></div>
           <div class="hf-assistant-panel" id="panel-favorites"></div>
           <div class="hf-assistant-panel" id="panel-recommend"></div>
@@ -239,6 +242,8 @@ const Sidebar = {
       OverviewTab.render(this.getPanel('overview'), this.modelInfo);
     } else if (tabName === 'deploy' && typeof DeployTab !== 'undefined') {
       DeployTab.render(this.getPanel('deploy'), this.modelInfo);
+    } else if (tabName === 'request' && typeof RequestTab !== 'undefined') {
+      RequestTab.render(this.getPanel('request'), this.modelInfo);
     } else if (tabName === 'download' && typeof DownloadTab !== 'undefined') {
       DownloadTab.render(this.getPanel('download'), this.modelInfo);
     } else if (tabName === 'favorites' && typeof FavoritesTab !== 'undefined') {
@@ -264,12 +269,35 @@ const Sidebar = {
     this.isOpen = false;
     this.shadowRoot.querySelector('.hf-assistant-sidebar').classList.add('collapsed');
     this.shadowRoot.querySelector('.hf-assistant-collapsed').style.display = 'block';
+    this.updatePageMargin(0);
   },
 
   expand() {
     this.isOpen = true;
     this.shadowRoot.querySelector('.hf-assistant-sidebar').classList.remove('collapsed');
     this.shadowRoot.querySelector('.hf-assistant-collapsed').style.display = 'none';
+    this.updatePageMargin(this.currentWidth);
+  },
+
+  updatePageMargin(width = 360) {
+    if (width > 0) this.currentWidth = width;
+    if (window.__HF_ASSISTANT_PLATFORM__ !== 'hf') return;
+
+    const main = document.querySelector('main, .container, #main-content');
+    if (!main) return;
+
+    main.style.marginRight = this.isOpen && width > 0 ? `${width}px` : '';
+  },
+
+  destroy() {
+    this.updatePageMargin(0);
+    if (this.container) {
+      this.container.remove();
+    }
+    this.container = null;
+    this.shadowRoot = null;
+    this.modelInfo = null;
+    this.currentTab = 'overview';
   },
 
   getPanel(name) {
