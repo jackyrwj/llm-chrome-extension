@@ -13,6 +13,10 @@
 //    GitHub Actions 版本能把 tests/lint 分到 pro6000-1(Node 22)、build 分到 4090 并行；
 //    Jenkins 要做到这点需要额外配置 agent 节点，目前是单机执行。
 //    实测这套测试在 Node 20 与 22 下都通过。
+//
+// 宿主机前提：node、python3、zip、git。
+//    这是自建 CI 与托管 CI 的实质差别——托管 runner 的镜像预装了常用工具，
+//    自建则由你保证。首次构建就因为这台机器没装 zip 而失败过一次。
 
 pipeline {
     agent any
