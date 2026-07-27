@@ -1,0 +1,63 @@
+{
+  "branches": ["main"],
+  "plugins": [
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "preset": "conventionalcommits",
+        "releaseRules": [
+          { "type": "docs", "release": false },
+          { "type": "ci", "release": false },
+          { "type": "chore", "release": false },
+          { "type": "test", "release": false },
+          { "type": "style", "release": false },
+          { "type": "refactor", "release": false }
+        ]
+      }
+    ],
+    [
+      "@semantic-release/release-notes-generator",
+      {
+        "preset": "conventionalcommits",
+        "presetConfig": {
+          "types": [
+            { "type": "feat", "section": "🚀 新功能" },
+            { "type": "fix", "section": "🐛 问题修复" },
+            { "type": "perf", "section": "⚡ 性能" },
+            { "type": "docs", "hidden": true },
+            { "type": "ci", "hidden": true },
+            { "type": "chore", "hidden": true },
+            { "type": "test", "hidden": true },
+            { "type": "style", "hidden": true },
+            { "type": "refactor", "hidden": true }
+          ]
+        }
+      }
+    ],
+    "@semantic-release/changelog",
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": ".ci/prepare-release.sh ${nextRelease.version}"
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "assets": ["manifest.json", "CHANGELOG.md"],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "assets": [
+          {
+            "path": "llm-chrome-extension-v*.zip",
+            "label": "Chrome 扩展包"
+          }
+        ]
+      }
+    ]
+  ]
+}

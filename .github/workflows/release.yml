@@ -1,0 +1,76 @@
+name: Release
+
+# semantic-release：推到 main 后全自动发版，没有任何需要点确认的环节。
+#
+# 为什么换掉 release-please：
+#   release-please 用「机器人开一个 Release PR」当发版闸门，而 GitHub 规定
+#   GITHUB_TOKEN 创建的 PR 不会自动触发 workflow，导致该 PR 的必需状态检查
+#   永远停在 action_required，每次发版都得手动点一次「Approve and run」。
+#   semantic-release 不开 PR——算版本、打 tag、建 Release、传产物全在这一个
+#   job 里做完，不依赖任何二次触发，所以不存在那个点击。
+#
+# 代价（明确记下来）：没有中间确认环节。推一个 fix: 到 main 就会立即发布新版本。
+#   不想发版的改动，提交信息用 ci: / chore: / docs: / test: / refactor: / style: 开头，
+#   这些前缀在 .releaserc.json 里配成不触发发版。
+#
+# 版本号规则：fix: -> patch，feat: -> minor，feat!: 或正文含 BREAKING CHANGE -> major
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write        # 打 tag、建 Release、把版本号提交回 main
+  issues: write          # semantic-release 会在相关 issue/PR 下留言
+  pull-requests: write
+
+concurrency:
+  # 连续推送时避免两次发版打架
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: 发版
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # semantic-release 要读完整历史和 tag 才能算出上一个版本
+          fetch-depth: 0
+          persist-credentials: true
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      # 发版前再跑一次测试。失败就不发版——这比发出去再回滚强得多，
+      # 尤其是 Chrome 扩展发布后无法撤回，只能靠发更高版本覆盖。
+      - name: 跑测试
+        run: node --test tests/*.js
+
+      - name: 校验必需文件
+        run: |
+          set -euo pipefail
+          test -f manifest.json
+          python3 -m json.tool manifest.json > /dev/null
+          for d in src icons docs; do test -d "$d"; done
+          test -f privacy-policy.html
+
+      # 本仓库没有 package.json，插件由 npx 临时拉取。
+      # commit-analyzer / release-notes-generator / github 三个插件随
+      # semantic-release 本体一起发布，无需单独列出；其余三个要显式指定。
+      - name: semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x .ci/prepare-release.sh
+          npx -y \
+            -p semantic-release@24 \
+            -p @semantic-release/changelog@6 \
+            -p @semantic-release/exec@6 \
+            -p @semantic-release/git@10 \
+            -p conventional-changelog-conventionalcommits@8 \
+            semantic-release

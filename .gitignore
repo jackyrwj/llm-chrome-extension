@@ -1,5 +1,8 @@
 .claude/
 hf-model-assistant.zip
+# semantic-release 在 CI 里生成的上架包，不进版本库
+llm-chrome-extension-v*.zip
+llm-chrome-extension.zip
 .DS_Store
 node_modules/
 .worktrees/
