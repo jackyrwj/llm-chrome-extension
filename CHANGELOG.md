@@ -1,3 +1,9 @@
+## [1.0.5](https://github.com/jackyrwj/llm-chrome-extension/compare/v1.0.4...v1.0.5) (2026-07-27)
+
+### 🐛 问题修复
+
+* 清理 .gitignore 末尾空行 ([76d2eae](https://github.com/jackyrwj/llm-chrome-extension/commit/76d2eae3c9c140758c85882d7196918e0320b167))
+
 ## [1.0.4](https://github.com/jackyrwj/llm-chrome-extension/compare/v1.0.3...v1.0.4) (2026-07-27)
 
 ### 🐛 问题修复
