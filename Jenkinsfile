@@ -133,21 +133,60 @@ pipeline {
                         API=http://100.69.54.118:3000/api/v1/repos/raowenjie/llm-chrome-extension
 
                         VERSION=$(python3 -c "import json;print(json.load(open('manifest.json'))['version'])")
-                        # 带构建号，保证每次发布的 tag 唯一，避免与已有的 v1.0.1/v1.0.2 冲突
-                        TAG="v${VERSION}-build.${BUILD_NUMBER}"
-                        echo "发布 tag: ${TAG}"
+                        # tag 必须精确等于 manifest 版本号：release.yml 会校验二者一致，
+                        # 之前加 -build.N 后缀导致该校验失败。
+                        # 代价是同一版本只能发一次，所以下面先查重复。
+                        TAG="v${VERSION}"
+                        echo "目标 tag: ${TAG}"
+
+                        EXISTING=$(curl -sS "${API}/releases/tags/${TAG}" \
+                            -H "Authorization: token ${GITEA_TOKEN}" \
+                            -o /dev/null -w "%{http_code}")
+                        if [ "$EXISTING" = "200" ]; then
+                            echo "已存在 ${TAG} 的 release，说明 manifest.json 版本号未变更。"
+                            echo "要发布新版本，请先提升 manifest.json 里的 version。"
+                            exit 0
+                        fi
+
+                        # 上一个 tag 到现在的提交，作为发布说明
+                        PREV=$(git describe --tags --abbrev=0 2>/dev/null || true)
+                        if [ -n "$PREV" ]; then
+                            NOTES=$(git log --pretty=format:'- %s (%h)' "${PREV}..HEAD" | head -30)
+                            RANGE="自 ${PREV} 以来的变更"
+                        else
+                            NOTES=$(git log --pretty=format:'- %s (%h)' -20)
+                            RANGE="最近的变更"
+                        fi
+                        [ -z "$NOTES" ] && NOTES="- 无代码变更"
+                        echo "发布说明基于: ${RANGE}"
+
+                        # 用 python 构造 JSON：发布说明是多行文本，shell 手工转义极易出错
+                        export TAG VERSION NOTES RANGE
+                        python3 > /tmp/release_payload.json <<'PYEOF'
+import json, os
+body = "\n".join([
+    f"### {os.environ['RANGE']}",
+    "",
+    os.environ["NOTES"],
+    "",
+    "---",
+    f"由 Jenkins 流水线构建，经人工审批发布。构建 #{os.environ.get('BUILD_NUMBER','?')}",
+])
+print(json.dumps({
+    "tag_name": os.environ["TAG"],
+    "target_commitish": "main",
+    "name": os.environ["VERSION"],
+    "body": body,
+    "draft": False,
+    "prerelease": False,
+}, ensure_ascii=False))
+PYEOF
 
                         RESP=$(curl -sS -X POST "${API}/releases" \
                             -H "Authorization: token ${GITEA_TOKEN}" \
                             -H "Content-Type: application/json" \
-                            -d "{
-                                  \\"tag_name\\": \\"${TAG}\\",
-                                  \\"target_commitish\\": \\"main\\",
-                                  \\"name\\": \\"${VERSION} (构建 #${BUILD_NUMBER})\\",
-                                  \\"body\\": \\"由 Jenkins 流水线构建并经人工审批发布。\\\\n提交: ${GIT_COMMIT}\\",
-                                  \\"draft\\": false,
-                                  \\"prerelease\\": false
-                                }")
+                            --data-binary @/tmp/release_payload.json)
+                        rm -f /tmp/release_payload.json
 
                         ID=$(printf '%s' "$RESP" | python3 -c "
 import json,sys
