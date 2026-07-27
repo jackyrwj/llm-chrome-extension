@@ -103,11 +103,3 @@ jobs:
           for d in src icons docs; do test -d "$d"; done
           test -f privacy-policy.html
 
-      - name: Create extension archive
-        run: |
-          rm -f llm-chrome-extension.zip
-          zip -qr llm-chrome-extension.zip \
-            manifest.json src icons docs privacy-policy.html \
-            -x '*.DS_Store'
-          test -s llm-chrome-extension.zip
-          echo "产物大小: $(du -h llm-chrome-extension.zip | cut -f1)"
