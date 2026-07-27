@@ -1,0 +1,83 @@
+name: Release Please
+
+# 自动发版。取代原来的 release.yml（手动改版本号 + 手动打 tag）。
+#
+# 工作方式：
+#   1. 每次推送到 main，release-please 扫描自上个 tag 以来的提交
+#   2. 按 Conventional Commits 算新版本号（fix: -> patch，feat: -> minor）
+#   3. 开一个 Release PR，内容是 manifest.json 版本号 + CHANGELOG.md
+#   4. 你合并这个 PR = 批准发版；它随即打 tag 并创建 GitHub Release
+#   5. 同一个 job 接着打包 zip 并挂到 Release 上
+#
+# 为什么打包步骤放在同一个 job，而不是保留原来「推 tag 触发 release.yml」的写法：
+#   release-please 用运行时自带的 GITHUB_TOKEN 打 tag，而 GitHub 规定
+#   GITHUB_TOKEN 产生的事件不会触发新的 workflow（防止无限递归）。
+#   所以那种写法下 tag 会正常出现、Release 也会创建，但 release.yml
+#   根本不会启动——没有报错、Actions 页面空白，只是 zip 永远不出现。
+#   放同一个 job 就完全绕开了这条限制，也不必引入 PAT。
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write        # 打 tag、创建 Release、提交版本号变更
+  pull-requests: write   # 开 / 更新 Release PR
+  issues: write          # release-please 会打 autorelease 标签
+
+jobs:
+  release:
+    name: 发版
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      # 下面所有步骤只在「本次真的创建了 Release」时执行。
+      # 绝大多数推送只是更新 Release PR，不会走到这里。
+      - uses: actions/checkout@v7
+        if: ${{ steps.release.outputs.releases_created == 'true' }}
+
+      - uses: actions/setup-node@v7
+        if: ${{ steps.release.outputs.releases_created == 'true' }}
+        with:
+          node-version: 22
+
+      # Release PR 合并前已由 ci.yml 跑过完整检查，这里再跑一次是为了
+      # 覆盖「PR 通过后、合并前 main 又被改动」的窗口。
+      # 注意失败后果：Release 已经创建，但没有 zip 附件。
+      # 这种情况下修好问题后手动 gh release upload 补挂即可，不必重新发版。
+      - name: 跑测试
+        if: ${{ steps.release.outputs.releases_created == 'true' }}
+        run: node --test tests/*.js
+
+      - name: 校验必需文件
+        if: ${{ steps.release.outputs.releases_created == 'true' }}
+        run: |
+          set -euo pipefail
+          test -f manifest.json
+          python3 -m json.tool manifest.json > /dev/null
+          for d in src icons docs; do test -d "$d"; done
+          test -f privacy-policy.html
+
+      - name: 打包并上传到 Release
+        if: ${{ steps.release.outputs.releases_created == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag_name }}
+        run: |
+          set -euo pipefail
+          ARCHIVE="llm-chrome-extension-${TAG}.zip"
+          # 应用商店要求 manifest.json 在 zip 根目录，不能多一层父目录
+          zip -qr "$ARCHIVE" \
+            manifest.json src icons docs privacy-policy.html \
+            -x '*.DS_Store'
+          test -s "$ARCHIVE"
+          echo "产物: $ARCHIVE  $(du -h "$ARCHIVE" | cut -f1)"
+          gh release upload "$TAG" "$ARCHIVE" --clobber
+          echo "已发布: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}"
