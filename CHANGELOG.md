@@ -1,3 +1,9 @@
+## [1.0.6](https://github.com/jackyrwj/llm-chrome-extension/compare/v1.0.5...v1.0.6) (2026-07-27)
+
+### 🐛 问题修复
+
+* try auto release ([7e3f7a1](https://github.com/jackyrwj/llm-chrome-extension/commit/7e3f7a18be3844f4a257f14be784b2725adeaa79))
+
 ## [1.0.5](https://github.com/jackyrwj/llm-chrome-extension/compare/v1.0.4...v1.0.5) (2026-07-27)
 
 ### 🐛 问题修复
