@@ -164,7 +164,12 @@ pipeline {
                         export TAG VERSION NOTES RANGE
                         python3 > /tmp/release_payload.json <<'PYEOF'
 import json, os
-body = "\n".join([
+# 换行符必须用 chr(10) 表示，不能写成反斜杠加 n 的转义形式。
+# 原因：这段脚本嵌在 Groovy 的三重单引号字符串里，Groovy 会先处理该转义，
+# 在传给 python 之前就把它替换成真正的换行符，从而把字符串字面量劈成两行，
+# 报 SyntaxError: unterminated string literal。这条注释本身也不能出现该转义。
+NL = chr(10)
+body = NL.join([
     f"### {os.environ['RANGE']}",
     "",
     os.environ["NOTES"],
