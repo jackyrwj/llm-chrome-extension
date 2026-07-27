@@ -25,7 +25,9 @@ pipeline {
         timestamps()
         // 只留最近 20 次构建，避免磁盘被日志和产物撑满
         buildDiscarder(logRotator(numToKeepStr: '20'))
-        timeout(time: 15, unit: 'MINUTES')
+        // 必须大于审批阶段的等待上限（30 分钟），否则顶层会先超时把构建掐掉，
+        // 人还没来得及点批准
+        timeout(time: 60, unit: 'MINUTES')
     }
 
     environment {
@@ -96,6 +98,75 @@ pipeline {
                 '''
                 // 归档后可在 Jenkins 网页上直接下载，这是 Jenkins 比较顺手的一点
                 archiveArtifacts artifacts: 'llm-chrome-extension.zip', fingerprint: true
+            }
+        }
+
+        stage('等待审批') {
+            // 不用 when { branch 'main' }：那个条件依赖 BRANCH_NAME 变量，
+            // 只有多分支流水线才会注入，普通 Pipeline 任务里恒为空 -> 阶段永远被跳过。
+            // 本任务在 config.xml 里已限定只构建 */main，无需再判断。
+            options {
+                // 不设超时的话，无人处理的构建会一直占着执行器
+                timeout(time: 30, unit: 'MINUTES')
+            }
+            steps {
+                // input 是 Jenkins 内置的人工闸门：流水线就地暂停，
+                // Stage View 里该格变成待办，点进去有「批准 / 中止」按钮。
+                // 这正是 GitHub 免费套餐做不到、只能用独立手动工作流绕开的能力。
+                //
+                // 注意：input 期间仍占用一个执行器（因为顶层是 agent any，
+                // 各阶段共享同一工作区，打包产物要留到发布阶段用）。
+                // 单机 Jenkins 执行器充裕，这个代价可接受。
+                input message: '确认发布到 Gitea Releases？', ok: '批准发布'
+            }
+        }
+
+        stage('发布到 Gitea Releases') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'gitea-token',
+                    usernameVariable: 'GITEA_USER',
+                    passwordVariable: 'GITEA_TOKEN')]) {
+                    // 单引号 sh 块：令牌不会被 Groovy 插值，不会出现在构建日志里
+                    sh '''
+                        set -eu
+                        API=http://100.69.54.118:3000/api/v1/repos/raowenjie/llm-chrome-extension
+
+                        VERSION=$(python3 -c "import json;print(json.load(open('manifest.json'))['version'])")
+                        # 带构建号，保证每次发布的 tag 唯一，避免与已有的 v1.0.1/v1.0.2 冲突
+                        TAG="v${VERSION}-build.${BUILD_NUMBER}"
+                        echo "发布 tag: ${TAG}"
+
+                        RESP=$(curl -sS -X POST "${API}/releases" \
+                            -H "Authorization: token ${GITEA_TOKEN}" \
+                            -H "Content-Type: application/json" \
+                            -d "{
+                                  \\"tag_name\\": \\"${TAG}\\",
+                                  \\"target_commitish\\": \\"main\\",
+                                  \\"name\\": \\"${VERSION} (构建 #${BUILD_NUMBER})\\",
+                                  \\"body\\": \\"由 Jenkins 流水线构建并经人工审批发布。\\\\n提交: ${GIT_COMMIT}\\",
+                                  \\"draft\\": false,
+                                  \\"prerelease\\": false
+                                }")
+
+                        ID=$(printf '%s' "$RESP" | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+if 'id' not in d:
+    print('创建 release 失败:', d.get('message', d), file=sys.stderr)
+    sys.exit(1)
+print(d['id'])
+")
+                        echo "release id: ${ID}"
+
+                        curl -sS -X POST "${API}/releases/${ID}/assets?name=llm-chrome-extension.zip" \
+                            -H "Authorization: token ${GITEA_TOKEN}" \
+                            -F "attachment=@llm-chrome-extension.zip" \
+                            -o /dev/null
+
+                        echo "已发布: http://100.69.54.118:3000/raowenjie/llm-chrome-extension/releases/tag/${TAG}"
+                    '''
+                }
             }
         }
     }
