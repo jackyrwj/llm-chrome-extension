@@ -51,4 +51,16 @@ assert.strictEqual(result6.numLayers, 64);
 assert.strictEqual(result6.hiddenSize, 5120);
 assert.strictEqual(result6.numKVHeads, 8);
 
+// 未知精度必须回退到 fp16，且 precision 字段要如实反映实际使用的档位——
+// 否则调用方会显示「按 Q3_K_M 估算」而数字其实是 fp16 算的，高估 4 倍。
+const fp16Ref = estimateVRAM({ parameterCount: '7B' }, { precision: 'fp16' });
+const unknown = estimateVRAM({ parameterCount: '7B' }, { precision: 'q3_k_m' });
+assert.strictEqual(unknown.precision, 'fp16');
+assert.strictEqual(unknown.vramGB, fp16Ref.vramGB);
+
+// 合法精度不受影响
+const int4 = estimateVRAM({ parameterCount: '7B' }, { precision: 'int4' });
+assert.strictEqual(int4.precision, 'int4');
+assert.ok(int4.vramGB < fp16Ref.vramGB);
+
 console.log('All VRAM estimator tests passed!');

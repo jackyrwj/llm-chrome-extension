@@ -88,8 +88,15 @@ function estimateVRAM(modelInfo, options = {}) {
     return { vramGB: null, status: 'unknown', message: '无法推断模型参数量' };
   }
 
-  const precision = options.precision || 'fp16';
-  const bytesPerParam = PRECISION_BYTES[precision] || PRECISION_BYTES.fp16;
+  // 精度表里没有的档位回退到 fp16，并把 precision 一并改写成实际使用的值。
+  // 之前只回退了字节数、没改 precision，调用方（recommend.js）会显示成
+  // 「按 Q3_K_M 估算约 X GB」，而 X 其实是按 fp16 算的——数字高估 4 倍，
+  // 标签却是另一回事。宁可标签保守，也不能让标签和计算对不上。
+  const requestedPrecision = options.precision || 'fp16';
+  const precision = Object.prototype.hasOwnProperty.call(PRECISION_BYTES, requestedPrecision)
+    ? requestedPrecision
+    : 'fp16';
+  const bytesPerParam = PRECISION_BYTES[precision];
   const userVramGB = options.userVramGB || 24;
 
   // 模型权重显存（含框架 overhead 20%）
