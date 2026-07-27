@@ -1,22 +1,30 @@
 name: CI
 
-# 跑在自建 runner 上（校内 GPU 服务器），不再使用 GitHub 托管的 ubuntu-latest。
+# 跑在 GitHub 托管 runner 上。
 #
-# 相对原版的三处改动，以及各自的原因：
+# 这个文件曾经迁到自建 runner（校内 GPU 服务器），后来又迁了回来。
+# 迁回的原因，以及当初为自建加的三处变通，一并记在这里，免得以后重蹈覆辙：
 #
-# 1. runs-on: ubuntu-latest -> [self-hosted, <机器标签>]
-#    tests / lint 需要 Node 22，落在 pro6000-1（已装 v22.22.1）；
-#    build 只需要 python3 + zip，落在 4090，与前两者并行。
+# 1. runs-on 从 [self-hosted, <机器>] 改回 ubuntu-latest
+#    自建 runner 的正当理由只有三条：需要 GPU、需要访问内网资源、
+#    私有仓库分钟数不够。本项目一条都不占——纯前端 Chrome 扩展，
+#    测试只用 node --test，不装任何依赖，而且是公开仓库（托管 runner 免费）。
+#    自建的代价却是实打实的：机器要自己维护（首次构建就因为某台机器没装 zip
+#    而失败）、runner 掉线整条流水线就卡住、公开仓库还有 fork PR
+#    在自己服务器上执行任意代码的安全问题。
 #
-# 2. actions/checkout -> 走 api.github.com 的 tarball 接口
-#    checkout 内部执行 git clone https://github.com/...，而本网络对 github.com 的
-#    TLS 握手存在概率性干扰（同一台机器时好时坏），实测能让该步骤卡满 3 分钟超时。
-#    api.github.com 不受影响，改走它的 tarball 接口后实测稳定。
+# 2. tarball 检出改回 actions/checkout
+#    当初改成走 api.github.com 的 tarball 接口，是因为校园服务器到 github.com
+#    的 TLS 握手存在概率性干扰，git clone 会随机卡满 3 分钟超时。
+#    托管 runner 在 GitHub 自己的网络里，没有这个问题。
+#    附带好处：tarball 没有 .git 目录，当初空白检查只能改成调 API 取 diff；
+#    现在可以用回 git diff --check。
 #
-# 3. actions/setup-node 删除
-#    该 action 需要联网下载 Node 发行包，且机器上已装好所需版本，没必要每次再装。
-#    代价是运行时版本由机器决定——所以下面加了显式的版本校验步骤，
-#    版本不符时快速失败，而不是让测试以意外的运行时跑过去。
+# 3. actions/setup-node 加回来
+#    自建版本删掉它，是因为机器上已装好 Node、且下载发行包要走那条不稳的网络，
+#    代价是运行时版本由机器决定（所以当时加了显式版本校验步骤兜底）。
+#    托管 runner 每次都是干净环境，版本由本文件声明——这反而更可靠，
+#    版本校验步骤也就不需要了。
 
 on:
   pull_request:
@@ -25,185 +33,81 @@ on:
   push:
     branches:
       - main
-      - 'ci/**'      # 便于在分支上验证 CI 改动本身
   workflow_dispatch:
 
 permissions:
   contents: read
 
-env:
-  NODE_MAJOR_REQUIRED: '22'
-
 jobs:
   tests:
     name: Tests
-    runs-on: [self-hosted, pro6000-1]
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        timeout-minutes: 5
-        run: |
-          set -euo pipefail
-          find "$GITHUB_WORKSPACE" -mindepth 1 -delete 2>/dev/null || true
-          for i in 1 2 3; do
-            if curl -fsSL --max-time 60 \
-                 -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-                 -H "Accept: application/vnd.github+json" \
-                 "https://api.github.com/repos/${{ github.repository }}/tarball/${{ github.sha }}" \
-                 -o "/tmp/src-${{ github.run_id }}-tests.tgz"; then
-              tar xzf "/tmp/src-${{ github.run_id }}-tests.tgz" --strip-components=1 -C "$GITHUB_WORKSPACE"
-              rm -f "/tmp/src-${{ github.run_id }}-tests.tgz"
-              exit 0
-            fi
-            echo "第 $i 次检出失败，5s 后重试"
-            sleep 5
-          done
-          echo "::error::检出失败（api.github.com 不可达）"
-          exit 1
+      - uses: actions/checkout@v7
 
-      - name: Verify Node version
-        run: |
-          set -euo pipefail
-          actual=$(node -v)
-          major=${actual#v}; major=${major%%.*}
-          echo "机器: $(hostname)  node: $actual"
-          if [ "$major" != "$NODE_MAJOR_REQUIRED" ]; then
-            echo "::error::需要 Node ${NODE_MAJOR_REQUIRED}.x，该机器是 ${actual}"
-            exit 1
-          fi
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
 
       - name: Run tests
         run: node --test tests/*.js
 
   lint:
     name: Lint
-    runs-on: [self-hosted, pro6000-1]
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        timeout-minutes: 5
-        run: |
-          set -euo pipefail
-          find "$GITHUB_WORKSPACE" -mindepth 1 -delete 2>/dev/null || true
-          for i in 1 2 3; do
-            if curl -fsSL --max-time 60 \
-                 -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-                 -H "Accept: application/vnd.github+json" \
-                 "https://api.github.com/repos/${{ github.repository }}/tarball/${{ github.sha }}" \
-                 -o "/tmp/src-${{ github.run_id }}-lint.tgz"; then
-              tar xzf "/tmp/src-${{ github.run_id }}-lint.tgz" --strip-components=1 -C "$GITHUB_WORKSPACE"
-              rm -f "/tmp/src-${{ github.run_id }}-lint.tgz"
-              exit 0
-            fi
-            echo "第 $i 次检出失败，5s 后重试"
-            sleep 5
-          done
-          echo "::error::检出失败（api.github.com 不可达）"
-          exit 1
+      # 空白检查要比对改动范围，需要完整历史
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
-      - name: Verify Node version
-        run: |
-          set -euo pipefail
-          actual=$(node -v)
-          major=${actual#v}; major=${major%%.*}
-          echo "机器: $(hostname)  node: $actual"
-          if [ "$major" != "$NODE_MAJOR_REQUIRED" ]; then
-            echo "::error::需要 Node ${NODE_MAJOR_REQUIRED}.x，该机器是 ${actual}"
-            exit 1
-          fi
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
 
       - name: Check JavaScript syntax
         run: |
           find src tests -type f -name '*.js' -print0 \
             | xargs -0 -n1 node --check
 
-      # 原版用 `git diff --check <base> HEAD` 检查空白错误，依赖 git 历史。
-      # tarball 检出没有 .git，该命令必然失败，所以改为从 API 取本次改动的 diff，
-      # 只检查新增行（+ 开头）的行尾空白。检查的意图不变。
       - name: Check whitespace errors
         run: |
           set -uo pipefail
           base='${{ github.event.pull_request.base.sha || github.event.before }}'
-          head='${{ github.sha }}'
           zero='0000000000000000000000000000000000000000'
 
-          if [ -n "$base" ] && [ "$base" != "$zero" ]; then
-            url="https://api.github.com/repos/${{ github.repository }}/compare/${base}...${head}"
-          else
-            # 新建分支首推时没有可比的 base，退化为只看该提交自身
-            url="https://api.github.com/repos/${{ github.repository }}/commits/${head}"
+          if [ -z "$base" ] || [ "$base" = "$zero" ]; then
+            echo "无可比对的基准提交（新分支首推），跳过"
+            exit 0
           fi
-
-          diff=$(curl -fsSL --max-time 60 \
-                   -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-                   -H "Accept: application/vnd.github.v3.diff" \
-                   "$url") || { echo "::error::取 diff 失败: $url"; exit 1; }
-
-          if [ -z "$diff" ]; then
-            echo "本次无代码改动，跳过"
+          if ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+            echo "基准提交 ${base} 不在检出的历史中，跳过"
             exit 0
           fi
 
-          # 只看新增行，排除 diff 自身的 +++ 文件头
-          bad=$(printf '%s\n' "$diff" \
-                  | grep -E '^\+' | grep -v '^\+\+\+' \
-                  | grep -E '[ \t]+$' || true)
-          if [ -n "$bad" ]; then
-            echo "::error::新增行存在行尾空白："
-            printf '%s\n' "$bad" | head -20
-            exit 1
-          fi
-          echo "空白检查通过"
+          git diff --check "$base" HEAD
 
   build:
     name: Build
-    # 只需要 python3 + zip，不需要 Node，放到 4090 与上面两个 job 并行
-    runs-on: [self-hosted, gpu-4090]
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        timeout-minutes: 5
-        run: |
-          set -euo pipefail
-          find "$GITHUB_WORKSPACE" -mindepth 1 -delete 2>/dev/null || true
-          for i in 1 2 3; do
-            if curl -fsSL --max-time 60 \
-                 -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-                 -H "Accept: application/vnd.github+json" \
-                 "https://api.github.com/repos/${{ github.repository }}/tarball/${{ github.sha }}" \
-                 -o "/tmp/src-${{ github.run_id }}-build.tgz"; then
-              tar xzf "/tmp/src-${{ github.run_id }}-build.tgz" --strip-components=1 -C "$GITHUB_WORKSPACE"
-              rm -f "/tmp/src-${{ github.run_id }}-build.tgz"
-              exit 0
-            fi
-            echo "第 $i 次检出失败，5s 后重试"
-            sleep 5
-          done
-          echo "::error::检出失败（api.github.com 不可达）"
-          exit 1
+      - uses: actions/checkout@v7
 
       - name: Validate extension files
         run: |
-          echo "机器: $(hostname)"
           test -f manifest.json
           python3 -m json.tool manifest.json > /dev/null
-          test -d src
-          test -d icons
-          test -d docs
+          for d in src icons docs; do test -d "$d"; done
           test -f privacy-policy.html
 
       - name: Create extension archive
         run: |
           rm -f llm-chrome-extension.zip
-          zip -r llm-chrome-extension.zip \
-            manifest.json \
-            src \
-            icons \
-            docs \
-            privacy-policy.html \
+          zip -qr llm-chrome-extension.zip \
+            manifest.json src icons docs privacy-policy.html \
             -x '*.DS_Store'
-
-      - name: Verify archive
-        run: |
           test -s llm-chrome-extension.zip
           echo "产物大小: $(du -h llm-chrome-extension.zip | cut -f1)"
