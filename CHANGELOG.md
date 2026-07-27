@@ -1,3 +1,9 @@
+## [1.0.4](https://github.com/jackyrwj/llm-chrome-extension/compare/v1.0.3...v1.0.4) (2026-07-27)
+
+### 🐛 问题修复
+
+* 未知精度回退时同步修正 precision 字段 ([453ed1e](https://github.com/jackyrwj/llm-chrome-extension/commit/453ed1e595912ee87ca3fea23563f86567d3d3b0))
+
 # Changelog
 
 ## [1.0.3](https://github.com/jackyrwj/llm-chrome-extension/compare/v1.0.2...v1.0.3) (2026-07-27)
