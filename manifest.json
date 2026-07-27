@@ -2,13 +2,22 @@
   "manifest_version": 3,
   "name": "HF Model Assistant",
   "description": "Hugging Face model page assistant with ModelScope mapping, deployment commands, VRAM estimation",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "homepage_url": "https://github.com/jackyrwj/llm-chrome-extension",
-  "permissions": ["storage", "clipboardWrite"],
-  "host_permissions": ["https://huggingface.co/*", "https://www.modelscope.cn/*"],
+  "permissions": [
+    "storage",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "https://huggingface.co/*",
+    "https://www.modelscope.cn/*"
+  ],
   "content_scripts": [
     {
-      "matches": ["https://huggingface.co/*", "https://www.modelscope.cn/*"],
+      "matches": [
+        "https://huggingface.co/*",
+        "https://www.modelscope.cn/*"
+      ],
       "js": [
         "src/shared/i18n.js",
         "src/shared/storage.js",
@@ -25,14 +34,22 @@
         "src/content/sidebar.js",
         "src/content/content.js"
       ],
-      "css": ["src/content/sidebar.css"],
+      "css": [
+        "src/content/sidebar.css"
+      ],
       "run_at": "document_idle"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["src/content/sidebar.css", "src/assets/wechat-qr.png"],
-      "matches": ["https://huggingface.co/*", "https://www.modelscope.cn/*"]
+      "resources": [
+        "src/content/sidebar.css",
+        "src/assets/wechat-qr.png"
+      ],
+      "matches": [
+        "https://huggingface.co/*",
+        "https://www.modelscope.cn/*"
+      ]
     }
   ],
   "background": {
