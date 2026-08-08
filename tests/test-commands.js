@@ -1,30 +1,33 @@
 const assert = require('assert');
-const { generateCommand, getSupportedTools } = require('../src/shared/commands.js');
+const { Commands } = require('../src/shared/commands.js');
 
-const tools = getSupportedTools();
-assert(tools.includes('ollama'));
-assert(tools.includes('vllm'));
-assert(tools.includes('llamacpp'));
+// 硬数据原则：只生成基础命令，不带任何推荐参数
+assert.deepStrictEqual(Commands.DEPLOY_TOOLS, ['vllm', 'sglang']);
 
-const cmd1 = generateCommand('ollama', 'meta-llama/Llama-2-7b', { quant: 'q4_K_M' });
-assert(cmd1.includes('ollama run'));
-assert(cmd1.includes('meta-llama/Llama-2-7b:q4_K_M'), `Expected model:quant suffix, got: ${cmd1}`);
-assert(!cmd1.includes('  '), `Command has extra spaces: ${cmd1}`);
+assert.strictEqual(
+  Commands.deployCommand('vllm', 'Qwen/Qwen3-32B'),
+  'vllm serve Qwen/Qwen3-32B'
+);
+assert.strictEqual(
+  Commands.deployCommand('sglang', 'Qwen/Qwen3-32B'),
+  'python -m sglang.launch_server --model-path Qwen/Qwen3-32B'
+);
+assert.strictEqual(
+  Commands.vllmModelScopeCommand('qwen/Qwen3-32B'),
+  'VLLM_USE_MODELSCOPE=true vllm serve qwen/Qwen3-32B'
+);
 
-const cmd2 = generateCommand('vllm', 'meta-llama/Llama-2-7b', { tp: 2, quant: 'awq' });
-assert(cmd2.includes('vllm serve'));
-assert(cmd2.includes('--tensor-parallel-size 2'));
-assert(cmd2.includes('--quantization awq'));
-assert(!cmd2.includes('--gpu-memory-utilization'));
+assert.strictEqual(
+  Commands.downloadCommand('modelscope', 'qwen/Qwen3-32B'),
+  'modelscope download --model qwen/Qwen3-32B'
+);
+assert.strictEqual(
+  Commands.downloadCommand('hf', 'Qwen/Qwen3-32B'),
+  'huggingface-cli download Qwen/Qwen3-32B'
+);
 
-const cmd3 = generateCommand('vllm', 'meta-llama/Llama-2-7b', {});
-assert(cmd3.includes('--tensor-parallel-size 1'));
-assert(cmd3.includes('--dtype auto'));
-assert(cmd3.includes('--max-model-len 32768'));
+// 未知工具/来源必须抛错，而不是静默生成错误命令
+assert.throws(() => Commands.deployCommand('ollama', 'm'), /Unknown deployment tool/);
+assert.throws(() => Commands.downloadCommand('hf-mirror', 'm'), /Unknown download source/);
 
-const cmd4 = generateCommand('llamacpp', './model.gguf', { ngl: 35, ctx: 8192 });
-assert(cmd4.includes('./main'));
-assert(cmd4.includes('-ngl 35'));
-assert(cmd4.includes('--ctx-size 8192'));
-
-console.log('All command generator tests passed!');
+console.log('All command tests passed!');

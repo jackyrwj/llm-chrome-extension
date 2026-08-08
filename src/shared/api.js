@@ -1,56 +1,43 @@
 const API = {
-  async fetchModelConfig(modelId) {
+  // HF 模型全部硬数据一次取回：config、文件列表（含大小）、safetensors 统计、
+  // 下载量/点赞/标签/许可证/更新时间。blobs=true 让 siblings 带上文件大小。
+  async fetchModelData(modelId) {
     try {
-      if (typeof chrome !== 'undefined' && chrome.runtime) {
-        return await chrome.runtime.sendMessage({ action: 'fetchModelConfig', modelId });
+      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+        return await chrome.runtime.sendMessage({ action: 'fetchModelData', modelId });
       }
-      const res = await fetch(`https://huggingface.co/api/models/${encodeURIComponent(modelId)}`);
-      const data = await res.json();
-      return { config: data.config || {} };
+      const res = await fetch(`https://huggingface.co/api/models/${encodeURIComponent(modelId)}?blobs=true`);
+      if (!res.ok) return { error: `HTTP ${res.status}` };
+      return { data: await res.json() };
     } catch (e) {
       return { error: e.message };
     }
   },
 
-  async fetchHFModels(filters = {}) {
+  // ModelScope 模型信息（best-effort，字段缺失时由调用方降级）
+  async fetchMsModelData(modelId) {
     try {
-      if (typeof chrome !== 'undefined' && chrome.runtime) {
-        return await chrome.runtime.sendMessage({ action: 'fetchHFModels', filters });
+      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+        return await chrome.runtime.sendMessage({ action: 'fetchMsModelData', modelId });
       }
-      const params = new URLSearchParams({
-        sort: 'downloads',
-        direction: '-1',
-        limit: String(filters.limit || 50)
-      });
-      if (filters.pipeline_tag && filters.pipeline_tag !== 'all') {
-        params.set('filter', filters.pipeline_tag);
-      }
-      if (filters.search) {
-        params.set('search', filters.search);
-      }
-      if (filters.author) {
-        params.set('author', filters.author);
-      }
-      const res = await fetch(`https://huggingface.co/api/models?${params}`);
-      const data = await res.json();
-      return { models: data };
+      return { error: 'direct fetch unsupported' };
     } catch (e) {
       return { error: e.message };
     }
   },
 
-  async searchModelScope(modelId, endpoint) {
-    const url = `${endpoint}?search=${encodeURIComponent(modelId)}`;
+  // mapping.json 精确查表（含反向），在 background 中读取打包资源
+  async lookupMapping(modelId, direction) {
     try {
-      if (typeof chrome !== 'undefined' && chrome.runtime) {
-        return await chrome.runtime.sendMessage({
-          action: 'searchModelScope',
-          modelId,
-          endpoint
-        });
-      }
-      const response = await fetch(url, { timeout: 5000 });
-      return await response.json();
+      return await chrome.runtime.sendMessage({ action: 'lookupMapping', modelId, direction });
+    } catch (e) {
+      return { error: e.message };
+    }
+  },
+
+  async searchModelScope(modelId) {
+    try {
+      return await chrome.runtime.sendMessage({ action: 'searchModelScope', modelId });
     } catch (e) {
       return { error: e.message };
     }
@@ -81,43 +68,6 @@ const API = {
     score += (commonParts.length / Math.max(hfParts.length, 1)) * 0.3;
 
     return Math.min(score, 0.99);
-  },
-
-  async translate(text, provider, apiKey, targetLang = 'zh') {
-    if (!text || !provider || provider === 'none') {
-      return null;
-    }
-    try {
-      if (typeof chrome !== 'undefined' && chrome.runtime) {
-        return await chrome.runtime.sendMessage({
-          action: 'translate',
-          text,
-          provider,
-          apiKey,
-          targetLang
-        });
-      }
-    } catch (e) {
-      return { error: e.message };
-    }
-  },
-
-  async translateSegments(segments, provider, apiKey, targetLang = 'zh') {
-    const results = [];
-    for (const segment of segments) {
-      if (segment.type === 'code') {
-        results.push(segment);
-      } else {
-        const translated = await this.translate(segment.text, provider, apiKey, targetLang);
-        results.push({
-          type: 'text',
-          text: segment.text,
-          translated: translated && !translated.error ? translated.text : null,
-          error: translated && translated.error ? translated.error : null
-        });
-      }
-    }
-    return results;
   }
 };
 
