@@ -1,27 +1,33 @@
+// 所有跨域请求集中在 service worker，content script 只发消息。
+// 只做三件事：取 HF 模型硬数据、查打包的镜像映射表、ModelScope 搜索兜底。
+const MS_SEARCH_ENDPOINT = 'https://www.modelscope.cn/api/v1/dolphin/models';
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (sender.id !== chrome.runtime.id) return false;
+
+  if (request.action === 'fetchModelData') {
+    handleFetchModelData(request.modelId)
+      .then(sendResponse)
+      .catch(err => sendResponse({ error: err.message }));
+    return true;
+  }
+
+  if (request.action === 'fetchMsModelData') {
+    handleFetchMsModelData(request.modelId)
+      .then(sendResponse)
+      .catch(err => sendResponse({ error: err.message }));
+    return true;
+  }
+
+  if (request.action === 'lookupMapping') {
+    handleLookupMapping(request.modelId, request.direction)
+      .then(sendResponse)
+      .catch(err => sendResponse({ error: err.message }));
+    return true;
+  }
+
   if (request.action === 'searchModelScope') {
-    handleModelScopeSearch(request.modelId, request.endpoint)
-      .then(sendResponse)
-      .catch(err => sendResponse({ error: err.message }));
-    return true;
-  }
-
-  if (request.action === 'translate') {
-    handleTranslate(request.text, request.provider, request.apiKey, request.targetLang)
-      .then(sendResponse)
-      .catch(err => sendResponse({ error: err.message }));
-    return true;
-  }
-
-  if (request.action === 'fetchModelConfig') {
-    handleFetchModelConfig(request.modelId)
-      .then(sendResponse)
-      .catch(err => sendResponse({ error: err.message }));
-    return true;
-  }
-
-  if (request.action === 'fetchHFModels') {
-    handleFetchHFModels(request.filters)
+    handleModelScopeSearch(request.modelId)
       .then(sendResponse)
       .catch(err => sendResponse({ error: err.message }));
     return true;
@@ -30,149 +36,76 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return false;
 });
 
-async function handleFetchModelConfig(modelId) {
+async function fetchJson(url, timeoutMs) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 6000);
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(`https://huggingface.co/api/models/${encodeURIComponent(modelId)}`, {
+    const res = await fetch(url, {
       signal: controller.signal,
       headers: { 'Accept': 'application/json' }
     });
-    clearTimeout(timeoutId);
     if (!res.ok) return { error: `HTTP ${res.status}` };
-    const data = await res.json();
-    return { config: data.config || {} };
+    return { data: await res.json() };
   } catch (err) {
+    return { error: err.name === 'AbortError' ? 'Request timeout' : err.message };
+  } finally {
     clearTimeout(timeoutId);
-    return { error: err.message };
   }
 }
 
-async function handleFetchHFModels(filters = {}) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8000);
-  try {
-    const params = new URLSearchParams({
-      sort: 'downloads',
-      direction: '-1',
-      limit: String(filters.limit || 50)
-    });
-    if (filters.pipeline_tag && filters.pipeline_tag !== 'all') {
-      params.set('filter', filters.pipeline_tag);
-    }
-    if (filters.search) {
-      params.set('search', filters.search);
-    }
-    if (filters.author) {
-      params.set('author', filters.author);
-    }
-    const res = await fetch(`https://huggingface.co/api/models?${params}`, {
-      signal: controller.signal,
-      headers: { 'Accept': 'application/json' }
-    });
-    clearTimeout(timeoutId);
-    if (!res.ok) return { error: `HTTP ${res.status}` };
-    const data = await res.json();
-    return { models: data };
-  } catch (err) {
-    clearTimeout(timeoutId);
-    return { error: err.message };
-  }
+function handleFetchModelData(modelId) {
+  return fetchJson(
+    `https://huggingface.co/api/models/${encodeURIComponent(modelId)}?blobs=true`,
+    8000
+  );
 }
 
-async function handleModelScopeSearch(modelId, endpoint) {
-  const url = `${endpoint}?search=${encodeURIComponent(modelId)}`;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000);
+async function handleFetchMsModelData(modelId) {
+  const info = await fetchJson(
+    `https://www.modelscope.cn/api/v1/models/${encodeURIComponent(modelId)}`,
+    8000
+  );
+  if (info.error) return info;
 
-  try {
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'HF-Model-Assistant/1.0'
+  const files = await fetchJson(
+    `https://www.modelscope.cn/api/v1/models/${encodeURIComponent(modelId)}/repo/files?Recursive=true`,
+    8000
+  );
+  return { data: { info: info.data, files: files.error ? null : files.data } };
+}
+
+// 打包的 mapping.json 是核心资产：精确命中才算"已验证"，其他任何途径都是"未验证"。
+let mappingPromise = null;
+function loadMapping() {
+  if (!mappingPromise) {
+    mappingPromise = fetch(chrome.runtime.getURL('src/data/mapping.json')).then(r => r.json());
+  }
+  return mappingPromise;
+}
+
+async function handleLookupMapping(modelId, direction) {
+  const mapping = await loadMapping();
+
+  if (direction === 'fromModelScope') {
+    for (const [hfId, entry] of Object.entries(mapping)) {
+      if (entry.modelscope === modelId) {
+        return { match: { hfId, hfUrl: `https://huggingface.co/${hfId}` } };
       }
-    });
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      return { error: `HTTP ${response.status}` };
     }
-
-    const data = await response.json();
-    return { data };
-  } catch (err) {
-    clearTimeout(timeoutId);
-    if (err.name === 'AbortError') {
-      return { error: 'Request timeout' };
-    }
-    return { error: err.message };
+    return { match: null };
   }
+
+  const entry = mapping[modelId];
+  return {
+    match: entry
+      ? { msId: entry.modelscope, msUrl: entry.modelscopeUrl, lastVerified: entry.lastVerified }
+      : null
+  };
 }
 
-async function handleTranslate(text, provider, apiKey, targetLang) {
-  // Free Google Translate (no API key required)
-  if (provider === 'google_free') {
-    try {
-      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
-      const response = await fetch(url);
-      const data = await response.json();
-      // Google returns nested array: [[["translated", "original", ...], ...], ...]
-      if (data && data[0]) {
-        const translated = data[0].map(sentence => sentence[0]).join('');
-        return { text: translated };
-      }
-      return { error: 'Translation failed' };
-    } catch (err) {
-      return { error: err.message };
-    }
-  }
-
-  // DeepL (requires API key)
-  if (provider === 'deepl' && apiKey) {
-    try {
-      const response = await fetch('https://api-free.deepl.com/v2/translate', {
-        method: 'POST',
-        headers: {
-          'Authorization': `DeepL-Auth-Key ${apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          text: [text],
-          target_lang: targetLang.toUpperCase()
-        })
-      });
-      const data = await response.json();
-      return { text: data.translations?.[0]?.text };
-    } catch (err) {
-      return { error: err.message };
-    }
-  }
-
-  // OpenAI (requires API key)
-  if (provider === 'openai' && apiKey) {
-    try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
-          messages: [
-            { role: 'system', content: 'You are a translator. Translate the following text to Chinese. Only output the translation, no explanations.' },
-            { role: 'user', content: text }
-          ],
-          temperature: 0.3
-        })
-      });
-      const data = await response.json();
-      return { text: data.choices?.[0]?.message?.content };
-    } catch (err) {
-      return { error: err.message };
-    }
-  }
-
-  return { error: 'Translation provider not configured' };
+async function handleModelScopeSearch(modelId) {
+  return fetchJson(
+    `${MS_SEARCH_ENDPOINT}?search=${encodeURIComponent(modelId)}`,
+    5000
+  );
 }

@@ -10,90 +10,77 @@
 
   if (!isHF && !isModelScope) return;
 
-  // Store platform info globally
-  window.__HF_ASSISTANT_PLATFORM__ = isHF ? 'hf' : 'modelscope';
-  let refreshTimer = null;
-  let refreshAttempts = 0;
+  const platform = isHF ? 'hf' : 'modelscope';
 
-  function isModelDetailPage() {
-    const pathParts = window.location.pathname.split('/').filter(Boolean);
+  function getModelId() {
+    const parts = window.location.pathname.split('/').filter(Boolean);
 
     if (isHF) {
-      if (pathParts.length < 2) return false;
-      const excludedPrefixes = ['spaces', 'datasets', 'docs', 'blog', 'search', 'settings', 'organizations', 'users', 'papers', 'login', 'join', 'logout', 'api', 'pricing', 'enterprise'];
-      return !excludedPrefixes.includes(pathParts[0]);
+      const excluded = ['spaces', 'datasets', 'docs', 'blog', 'search', 'settings',
+        'organizations', 'users', 'papers', 'login', 'join', 'logout', 'api',
+        'pricing', 'enterprise'];
+      if (parts.length < 2 || excluded.includes(parts[0])) return null;
+      return `${parts[0]}/${parts[1]}`;
     }
 
     if (isModelScope) {
-      return pathParts[0] === 'models' && pathParts.length >= 3;
+      if (parts[0] !== 'models' || parts.length < 3) return null;
+      return `${parts[1]}/${parts[2]}`;
     }
 
-    return false;
+    return null;
   }
 
-  function populateModelInfo() {
-    if (!Sidebar.container) return false;
+  // 右侧栏锚点：候选选择器按优先级尝试，找不到就等 MutationObserver 再试。
+  // 两个站都是 SPA，右侧栏渲染晚于 content script 是常态。
+  const RAIL_SELECTORS = isHF
+    ? ['main aside', 'aside']
+    : ['.model-detail-right', '.right-container', 'main aside', 'aside'];
 
-    const modelInfo = PageScraper.extractModelInfo();
-    if (modelInfo) {
-      modelInfo.platform = isHF ? 'hf' : 'modelscope';
-      modelInfo.files = PageScraper.extractFileList();
-      Sidebar.setModelInfo(modelInfo);
-      Sidebar.updatePageMargin(Sidebar.currentWidth || 360);
-      refreshAttempts = 0;
-      return true;
+  function findRail() {
+    for (const sel of RAIL_SELECTORS) {
+      const el = document.querySelector(sel);
+      if (el) return el;
     }
-
-    // Some SPA renders land after our content script. Retry a few times without blocking the page.
-    if (refreshAttempts < 4) {
-      refreshAttempts += 1;
-      scheduleRefresh(250 * refreshAttempts);
-    }
-    return false;
+    return null;
   }
 
-  function scheduleRefresh(delay = 0) {
-    clearTimeout(refreshTimer);
-    refreshTimer = setTimeout(() => {
-      populateModelInfo();
-    }, delay);
-  }
+  let currentModelId = null;
 
-  async function init() {
-    try {
-      if (document.readyState === 'loading') {
-        await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
+  function ensureCard() {
+    const modelId = getModelId();
+
+    if (!modelId) {
+      if (Card.isMounted()) {
+        Card.unmount();
+        currentModelId = null;
       }
-
-      if (!isModelDetailPage()) return;
-
-      await Sidebar.init();
-      scheduleRefresh(0);
-
-    } catch (err) {
-      console.error('HF Model Assistant init error:', err);
+      return;
     }
+
+    // 同模型且卡片仍在：什么都不做（避免被 SPA 的无关 DOM 变更触发重渲染）
+    if (modelId === currentModelId && Card.isMounted()) return;
+
+    const rail = findRail();
+    if (!rail) return; // 等下一次 mutation 再试
+
+    Card.unmount();
+    Card.mount(rail);
+    currentModelId = modelId;
+    Card.render({ platform, modelId });
   }
 
+  // 统一兜底：URL 变化（SPA 导航）和 DOM 变化（右侧栏晚渲染、卡片被抹掉）
+  // 都走 ensureCard，去重逻辑在函数内部。
   let lastUrl = location.href;
   new MutationObserver(() => {
     const url = location.href;
     if (url !== lastUrl) {
       lastUrl = url;
-      refreshAttempts = 0;
-
-      const onDetail = isModelDetailPage();
-      const sidebarExists = !!Sidebar.container;
-
-      if (onDetail && !sidebarExists) {
-        Sidebar.init().then(() => scheduleRefresh(0));
-      } else if (!onDetail && sidebarExists) {
-        Sidebar.destroy();
-      } else if (onDetail && sidebarExists) {
-        scheduleRefresh(300);
-      }
+      currentModelId = null;
     }
+    ensureCard();
   }).observe(document, { subtree: true, childList: true });
 
-  init();
+  ensureCard();
 })();
